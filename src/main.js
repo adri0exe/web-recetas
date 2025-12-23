@@ -52,8 +52,8 @@ init();
 
 function init() {
   attachListeners();
-  ensureSession();
-  syncRecetas();
+  ensureSessionWithTimeout();
+  syncRecetasWithTimeout();
 }
 
 function attachListeners() {
@@ -150,11 +150,15 @@ function attachListeners() {
   });
 }
 
-async function ensureSession() {
-  const { data } = await supabase.auth.getSession();
-  currentSession = data?.session || null;
-  await refreshUserMeta();
-  updateAuthUI();
+async function ensureSessionWithTimeout() {
+  try {
+    const data = await withTimeout(() => supabase.auth.getSession(), 8000, "timeout getSession");
+    currentSession = data?.data?.session || null;
+    await refreshUserMeta();
+    updateAuthUI();
+  } catch (err) {
+    console.error("Sesion no disponible", err);
+  }
 }
 
 async function refreshUserMeta() {
@@ -331,13 +335,19 @@ async function handleSubmit(event) {
   }
 }
 
-async function syncRecetas() {
+async function syncRecetasWithTimeout() {
   recetasContainer.innerHTML = '<p class="muted">Cargando recetas...</p>';
   try {
-    const { data, error } = await supabase
-      .from("recetas")
-      .select("*")
-      .order("fecha", { ascending: false });
+    const res = await withTimeout(
+      () =>
+        supabase
+          .from("recetas")
+          .select("*")
+          .order("fecha", { ascending: false }),
+      8000,
+      "timeout select recetas"
+    );
+    const { data, error } = res || {};
     if (error) throw error;
     recetas = data || [];
     currentPage = 1;
@@ -614,4 +624,20 @@ function getDisplayName(user) {
   if (meta.nombre) return meta.nombre;
   if (user.email) return user.email.split("@")[0];
   return "Usuario";
+}
+
+function withTimeout(fn, ms, label = "timeout") {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(label)), ms);
+    Promise.resolve()
+      .then(fn)
+      .then((result) => {
+        clearTimeout(timer);
+        resolve(result);
+      })
+      .catch((err) => {
+        clearTimeout(timer);
+        reject(err);
+      });
+  });
 }
