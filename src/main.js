@@ -154,7 +154,7 @@ function attachListeners() {
 
 async function ensureSessionWithTimeout() {
   try {
-    const data = await withTimeout(() => supabase.auth.getSession(), 8000, "timeout getSession");
+    const data = await withTimeout(() => supabase.auth.getSession(), SESSION_TIMEOUT, "timeout getSession");
     currentSession = data?.data?.session || null;
     await refreshUserMeta();
   } catch (err) {
@@ -167,7 +167,7 @@ async function ensureSessionWithTimeout() {
 
 async function refreshUserMeta() {
   try {
-    const { data } = await supabase.auth.getUser();
+    const { data } = await withTimeout(() => supabase.auth.getUser(), SESSION_TIMEOUT, "timeout getUser");
     if (data?.user) {
       currentSession = currentSession ? { ...currentSession, user: data.user } : { user: data.user };
     }
@@ -342,37 +342,38 @@ async function handleSubmit(event) {
 async function syncRecetasWithTimeout() {
   recetasContainer.innerHTML = '<p class="muted">Cargando recetas...</p>';
   try {
-    const res = await withTimeout(
+    // primero un fetch directo, que no depende del cliente
+    const resp = await withTimeout(
       () =>
-        supabase
-          .from("recetas")
-          .select("*")
-          .order("fecha", { ascending: false }),
-      8000,
-      "timeout select recetas"
+        fetch(`${SUPABASE_URL}/rest/v1/recetas?select=*`, {
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          },
+        }),
+      FETCH_TIMEOUT,
+      "timeout fetch recetas"
     );
-    const { data, error } = res || {};
-    if (error) throw error;
-    recetas = data || [];
+    if (!resp.ok) throw new Error(`fetch status ${resp.status}`);
+    const dataFetch = await resp.json();
+    recetas = Array.isArray(dataFetch) ? dataFetch : [];
     currentPage = 1;
     renderRecetas();
   } catch (err) {
-    console.warn("Fallo select con cliente Supabase, intento fetch directo", err);
+    console.warn("Fallo fetch directo, intento cliente Supabase", err);
     try {
-      const resp = await withTimeout(
+      const res = await withTimeout(
         () =>
-          fetch(`${SUPABASE_URL}/rest/v1/recetas?select=*`, {
-            headers: {
-              apikey: SUPABASE_ANON_KEY,
-              Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-            },
-          }),
-        8000,
-        "timeout fetch recetas"
+          supabase
+            .from("recetas")
+            .select("*")
+            .order("fecha", { ascending: false }),
+        FETCH_TIMEOUT,
+        "timeout select recetas"
       );
-      if (!resp.ok) throw new Error(`fetch status ${resp.status}`);
-      const data = await resp.json();
-      recetas = Array.isArray(data) ? data : [];
+      const { data, error } = res || {};
+      if (error) throw error;
+      recetas = data || [];
       currentPage = 1;
       renderRecetas();
     } catch (err2) {
