@@ -363,7 +363,8 @@
           hidePreview();
         } catch (err) {
           console.error(err);
-          alert("No se pudo guardar la receta. Vuelve a intentarlo.");
+          const reason = err?.message || "No se pudo guardar la receta. Vuelve a intentarlo.";
+          alert(reason);
         } finally {
           submitBtn.disabled = false;
           submitBtn.textContent = "Guardar receta";
