@@ -16,8 +16,8 @@ let searchTerm = "";
 let showFavoritesOnly = false;
 let currentPage = 1;
 const pageSize = 5;
-const SESSION_TIMEOUT = 8000;
-const FETCH_TIMEOUT = 15000;
+const SESSION_TIMEOUT = 20000;
+const FETCH_TIMEOUT = 20000;
 
 const form = document.getElementById("recipe-form");
 const recetasContainer = document.getElementById("recetas");
@@ -148,6 +148,8 @@ function attachListeners() {
   supabase.auth.onAuthStateChange(async (_event, session) => {
     currentSession = session;
     await refreshUserMeta();
+    if (session) hideLogin();
+    else showLogin();
     updateAuthUI();
   });
 }
@@ -157,6 +159,7 @@ async function ensureSessionWithTimeout() {
     const data = await withTimeout(() => supabase.auth.getSession(), SESSION_TIMEOUT, "timeout getSession");
     currentSession = data?.data?.session || null;
     await refreshUserMeta();
+    if (currentSession) hideLogin();
   } catch (err) {
     console.warn("Sesion no disponible, continuo sin sesion", err);
     currentSession = null;
