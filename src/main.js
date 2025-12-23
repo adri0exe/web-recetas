@@ -16,6 +16,8 @@ let searchTerm = "";
 let showFavoritesOnly = false;
 let currentPage = 1;
 const pageSize = 5;
+const SESSION_TIMEOUT = 15000;
+const FETCH_TIMEOUT = 20000;
 
 const form = document.getElementById("recipe-form");
 const recetasContainer = document.getElementById("recetas");
