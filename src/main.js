@@ -155,9 +155,11 @@ async function ensureSessionWithTimeout() {
     const data = await withTimeout(() => supabase.auth.getSession(), 8000, "timeout getSession");
     currentSession = data?.data?.session || null;
     await refreshUserMeta();
-    updateAuthUI();
   } catch (err) {
-    console.error("Sesion no disponible", err);
+    console.warn("Sesion no disponible, continuo sin sesion", err);
+    currentSession = null;
+  } finally {
+    updateAuthUI();
   }
 }
 
@@ -353,9 +355,29 @@ async function syncRecetasWithTimeout() {
     currentPage = 1;
     renderRecetas();
   } catch (err) {
-    console.error("No se pudieron cargar las recetas", err);
-    recetasContainer.innerHTML =
-      '<p class="empty">No se pudieron cargar las recetas. Comprueba tu conexion.</p>';
+    console.warn("Fallo select con cliente Supabase, intento fetch directo", err);
+    try {
+      const resp = await withTimeout(
+        () =>
+          fetch(`${SUPABASE_URL}/rest/v1/recetas?select=*`, {
+            headers: {
+              apikey: SUPABASE_ANON_KEY,
+              Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            },
+          }),
+        8000,
+        "timeout fetch recetas"
+      );
+      if (!resp.ok) throw new Error(`fetch status ${resp.status}`);
+      const data = await resp.json();
+      recetas = Array.isArray(data) ? data : [];
+      currentPage = 1;
+      renderRecetas();
+    } catch (err2) {
+      console.error("No se pudieron cargar las recetas", err2);
+      recetasContainer.innerHTML =
+        '<p class="empty">No se pudieron cargar las recetas. Comprueba tu conexion.</p>';
+    }
   }
 }
 
