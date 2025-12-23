@@ -245,7 +245,7 @@
         loginForm.addEventListener("submit", handleLogin);
         loginToggle.addEventListener("click", showLogin);
         loginClose.addEventListener("click", hideLogin);
-        logoutBtn.addEventListener("click", handleLogout);
+        logoutBtn.addEventListener("click", handleLogoutClean);
         toggleFormBtn.addEventListener("click", toggleFormVisibility);
         closeLightboxBtn.addEventListener("click", hideLightbox);
         lightbox.addEventListener("click", (e) => {
@@ -333,8 +333,9 @@
 
       async function ensureSession() {
         const { data } = await supabase.auth.getSession();
-        currentSession = data?.session || null;
+        currentSession = data?.session || getLocalSession();
         await refreshUserMeta();
+        if (currentSession) hideLogin();
         updateAuthUI();
       }
 
@@ -415,6 +416,22 @@
         } finally {
           // recarga inmediata para limpiar cualquier estado residual
           window.location.href = window.location.href;
+        }
+      }
+
+      // Nueva version para limpiar estado sin recargar
+      async function handleLogoutClean() {
+        try {
+          await supabase.auth.signOut();
+        } catch (err) {
+          console.error("Error al cerrar sesion", err);
+        } finally {
+          clearLocalSession();
+          currentSession = null;
+          formVisible = false;
+          formPanel.classList.add("hidden");
+          hideLogin();
+          updateAuthUI();
         }
       }
 
@@ -679,6 +696,32 @@
         return "Usuario";
       }
 
+      function getLocalSession() {
+        try {
+          const host = new URL(SUPABASE_URL).host;
+          const projectRef = host.split(".")[0];
+          const key = `sb-${projectRef}-auth-token`;
+          const raw = localStorage.getItem(key);
+          if (!raw) return null;
+          const parsed = JSON.parse(raw);
+          return parsed?.currentSession || null;
+        } catch (err) {
+          console.warn("No se pudo leer sesion local", err);
+          return null;
+        }
+      }
+
+      function clearLocalSession() {
+        try {
+          const host = new URL(SUPABASE_URL).host;
+          const projectRef = host.split(".")[0];
+          const key = `sb-${projectRef}-auth-token`;
+          localStorage.removeItem(key);
+        } catch (err) {
+          console.warn("No se pudo limpiar la sesion local", err);
+        }
+      }
+
       async function refreshUserMeta() {
         try {
           const { data } = await supabase.auth.getUser();
@@ -793,3 +836,4 @@
   </script>
 </body>
 </html>
+
