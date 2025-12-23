@@ -652,8 +652,11 @@
 
       function getDisplayName(user) {
         if (!user) return "";
-        const meta = user.user_metadata || {};
-        return meta.name || meta.nombre || (user.email ? user.email.split("@")[0] : "");
+        const meta = user.user_metadata || user.raw_user_meta_data || {};
+        if (meta.name) return meta.name;
+        if (meta.nombre) return meta.nombre;
+        if (user.email) return user.email.split("@")[0];
+        return "Usuario";
       }
 
       function toList(text) {
