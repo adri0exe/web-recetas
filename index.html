@@ -4,8 +4,9 @@
   <meta charset="UTF-8">
   <title>Recetario personal</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Sube y guarda tus recetas con fotos desde ordenador o móvil.">
+  <meta name="description" content="Sube y guarda tus recetas con fotos desde ordenador o movil.">
   <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <header class="hero">
@@ -18,9 +19,9 @@
     <section class="panel form-panel">
       <div class="panel-header">
         <div>
-          <p class="eyebrow">Añade una receta</p>
-          <h2>Desde tu ordenador o tu móvil</h2>
-          <p class="muted">Se guarda en este dispositivo; usa exportar/importar para moverlas.</p>
+          <p class="eyebrow">Anade una receta</p>
+          <h2>Desde tu ordenador o tu movil</h2>
+          <p class="muted">Se guarda en Supabase para verla en cualquier dispositivo.</p>
         </div>
         <div class="actions">
           <button type="button" id="exportar" class="ghost">Exportar (.json)</button>
@@ -38,13 +39,13 @@
         </label>
 
         <label class="field">
-          <span>Descripción breve</span>
-          <input id="resumen" name="resumen" type="text" maxlength="180" placeholder="Por qué es especial o para quién">
+          <span>Descripcion breve</span>
+          <input id="resumen" name="resumen" type="text" maxlength="180" placeholder="Por que es especial o para quien">
         </label>
 
         <div class="grid">
           <label class="field">
-            <span>Ingredientes (uno por línea) *</span>
+            <span>Ingredientes (uno por linea) *</span>
             <textarea id="ingredientes" name="ingredientes" rows="5" required placeholder="3 manzanas&#10;200 g harina&#10;1 huevo"></textarea>
           </label>
 
@@ -58,12 +59,12 @@
           <label class="field">
             <span>Foto (opcional)</span>
             <input id="foto" name="foto" type="file" accept="image/*" capture="environment">
-            <small class="muted">Puedes hacer la foto desde el móvil o elegir una existente.</small>
+            <small class="muted">Puedes hacer la foto desde el movil o elegir una existente.</small>
           </label>
 
           <div class="preview" id="preview">
-            <p class="muted">Previsualización</p>
-            <img id="preview-img" alt="Previsualización de la receta" hidden>
+            <p class="muted">Previsualizacion</p>
+            <img id="preview-img" alt="Previsualizacion de la receta" hidden>
           </div>
         </div>
 
@@ -79,7 +80,7 @@
         </div>
       </div>
       <div id="recetas" class="recetas-list">
-        <p class="empty">No hay recetas guardadas todavía.</p>
+        <p class="empty">No hay recetas guardadas todavia.</p>
       </div>
     </section>
   </main>
@@ -105,9 +106,13 @@
   </template>
 
   <script>
-    (function () {
-      const STORAGE_KEY = "recetas_guardadas";
-      const recetas = loadRecetas();
+    (async function () {
+      const SUPABASE_URL = "https://qooglpugptjfgitndkdz.supabase.co";
+      const SUPABASE_ANON_KEY = "sb_publishable_me8vRoE4wcZoSGzxLSuofA_-vnSFFQr";
+      const BUCKET_NAME = "recetas-fotos";
+      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      let recetas = [];
       const form = document.getElementById("recipe-form");
       const recetasContainer = document.getElementById("recetas");
       const fotoInput = document.getElementById("foto");
@@ -117,22 +122,8 @@
       const importInput = document.getElementById("importar");
       const template = document.getElementById("receta-template");
 
-      renderRecetas();
       attachListeners();
-
-      function loadRecetas() {
-        try {
-          const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-          return Array.isArray(data) ? data : [];
-        } catch (err) {
-          console.warn("No se pudieron leer las recetas guardadas", err);
-          return [];
-        }
-      }
-
-      function saveRecetas() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(recetas));
-      }
+      await syncRecetas();
 
       function attachListeners() {
         form.addEventListener("submit", handleSubmit);
@@ -164,16 +155,43 @@
             const text = await file.text();
             const data = JSON.parse(text);
             if (!Array.isArray(data)) throw new Error("Formato inesperado");
-            recetas.splice(0, recetas.length, ...data);
-            saveRecetas();
+            const normalizadas = data.map((item) => ({
+              id: item.id || crypto.randomUUID(),
+              titulo: item.titulo || "",
+              resumen: item.resumen || "",
+              ingredientes: item.ingredientes || [],
+              pasos: item.pasos || [],
+              foto_url: item.foto_url || item.foto || null,
+              fecha: item.fecha || new Date().toISOString(),
+            }));
+            const { data: insertadas, error } = await supabase.from("recetas").insert(normalizadas).select();
+            if (error) throw error;
+            recetas.unshift(...(insertadas || []));
             renderRecetas();
           } catch (err) {
-            alert("No se pudo importar el archivo. Asegúrate de que es un .json exportado aquí.");
+            alert("No se pudo importar el archivo. Asegurate de que es un .json exportado aqui.");
             console.error(err);
           } finally {
             importInput.value = "";
           }
         });
+      }
+
+      async function syncRecetas() {
+        recetasContainer.innerHTML = '<p class="muted">Cargando recetas...</p>';
+        try {
+          const { data, error } = await supabase
+            .from("recetas")
+            .select("*")
+            .order("fecha", { ascending: false });
+          if (error) throw error;
+          recetas = data || [];
+          renderRecetas();
+        } catch (err) {
+          console.error("No se pudieron cargar las recetas", err);
+          recetasContainer.innerHTML =
+            '<p class="empty">No se pudieron cargar las recetas. Comprueba tu conexion.</p>';
+        }
       }
 
       async function handleSubmit(event) {
@@ -186,28 +204,38 @@
           const resumen = form.resumen.value.trim();
           const ingredientes = toList(form.ingredientes.value);
           const pasos = toList(form.pasos.value);
-          const foto = fotoInput.files[0] ? await fileToDataURL(fotoInput.files[0]) : null;
+          const fotoFile = fotoInput.files[0] || null;
 
           if (!titulo || !ingredientes.length || !pasos.length) {
             alert("Completa al menos el nombre, ingredientes y pasos.");
             return;
           }
 
+          let fotoUrl = null;
+          if (fotoFile) {
+            fotoUrl = await subirFoto(fotoFile);
+          }
+
           const nuevaReceta = {
-            id: Date.now(),
+            id: crypto.randomUUID(),
             titulo,
             resumen,
             ingredientes,
             pasos,
-            foto,
+            foto_url: fotoUrl,
             fecha: new Date().toISOString(),
           };
 
-          recetas.unshift(nuevaReceta);
-          saveRecetas();
+          const { data, error } = await supabase.from("recetas").insert(nuevaReceta).select().single();
+          if (error) throw error;
+
+          recetas.unshift(data);
           renderRecetas();
           form.reset();
           hidePreview();
+        } catch (err) {
+          console.error(err);
+          alert("No se pudo guardar la receta. Vuelve a intentarlo.");
         } finally {
           submitBtn.disabled = false;
           submitBtn.textContent = "Guardar receta";
@@ -218,7 +246,7 @@
         recetasContainer.innerHTML = "";
 
         if (!recetas.length) {
-          recetasContainer.innerHTML = '<p class="empty">No hay recetas guardadas todavía.</p>';
+          recetasContainer.innerHTML = '<p class="empty">No hay recetas guardadas todavia.</p>';
           return;
         }
 
@@ -232,11 +260,12 @@
           const metaEl = clone.querySelector(".receta-meta");
 
           titleEl.textContent = receta.titulo;
-          summaryEl.textContent = receta.resumen || "Sin descripción";
+          summaryEl.textContent = receta.resumen || "Sin descripcion";
           metaEl.textContent = formatFecha(receta.fecha);
 
-          if (receta.foto) {
-            imgEl.src = receta.foto;
+          const fotoUrl = receta.foto_url || receta.foto || null;
+          if (fotoUrl) {
+            imgEl.src = fotoUrl;
             imgEl.alt = `Foto de ${receta.titulo}`;
             imgEl.hidden = false;
           } else {
@@ -244,14 +273,14 @@
           }
 
           ingredientesEl.innerHTML = "";
-          receta.ingredientes.forEach((item) => {
+          (receta.ingredientes || []).forEach((item) => {
             const li = document.createElement("li");
             li.textContent = item;
             ingredientesEl.appendChild(li);
           });
 
           pasosEl.innerHTML = "";
-          receta.pasos.forEach((item) => {
+          (receta.pasos || []).forEach((item) => {
             const li = document.createElement("li");
             li.textContent = item;
             pasosEl.appendChild(li);
@@ -287,6 +316,14 @@
       function showPreview(dataUrl) {
         previewImg.hidden = false;
         previewImg.src = dataUrl;
+      }
+
+      async function subirFoto(file) {
+        const fileName = `${crypto.randomUUID()}-${file.name}`;
+        const { data, error } = await supabase.storage.from(BUCKET_NAME).upload(fileName, file);
+        if (error) throw error;
+        const { data: publicData } = supabase.storage.from(BUCKET_NAME).getPublicUrl(data.path);
+        return publicData.publicUrl;
       }
 
       function fileToDataURL(file) {
