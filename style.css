@@ -234,6 +234,7 @@ button,
   border-radius: var(--radius);
   padding: 18px;
   background: #fffdf9;
+  position: relative;
 }
 
 .receta-header {
@@ -271,9 +272,11 @@ button,
 }
 
 .receta-actions {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
   display: flex;
   gap: 8px;
-  margin-top: 8px;
 }
 
 .danger {
