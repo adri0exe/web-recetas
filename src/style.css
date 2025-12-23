@@ -559,4 +559,35 @@ button,
     margin-top: 8px;
     justify-content: flex-start;
   }
+
+  .auth-actions {
+    position: static;
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .hero {
+    padding-top: 8px;
+  }
+
+  .receta {
+    padding: 14px;
+  }
+
+  .receta-actions button {
+    flex: 1 1 auto;
+  }
+}
+
+@media (max-width: 520px) {
+  .grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+
+  .auth-actions {
+    gap: 6px;
+  }
 }
