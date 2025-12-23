@@ -38,7 +38,7 @@
     <h1>Recetas caseras</h1>
     <p class="lead">Guarda tus ideas en casa o fuera, con foto, ingredientes y pasos.</p>
     <div class="hero-actions">
-      <button type="button" class="primary" id="toggle-form" hidden>Mostrar formulario</button>
+      <button type="button" class="primary" id="toggle-form" hidden>Nueva receta</button>
     </div>
   </header>
 
@@ -279,14 +279,14 @@
         formPanel.classList.toggle("hidden", !isLogged || !formVisible);
         submitBtn.disabled = !isLogged;
         toggleFormBtn.hidden = !isLogged;
-        toggleFormBtn.textContent = formVisible ? "Ocultar formulario" : "Mostrar formulario";
+        toggleFormBtn.textContent = formVisible ? "Ocultar formulario" : "Nueva receta";
         renderRecetas();
       }
 
       function toggleFormVisibility() {
         formVisible = !formVisible;
         formPanel.classList.toggle("hidden", !formVisible);
-        toggleFormBtn.textContent = formVisible ? "Ocultar formulario" : "Mostrar formulario";
+        toggleFormBtn.textContent = formVisible ? "Ocultar formulario" : "Nueva receta";
       }
 
       async function syncRecetas() {
