@@ -362,13 +362,14 @@
             return;
           }
 
-          let fotoUrl = null;
-          if (fotoFile) {
-            fotoUrl = await subirFoto(fotoFile);
-          }
-
           const editingId = form.dataset.editingId;
           if (editingId) {
+            const recetaActual = recetas.find((r) => r.id === editingId) || {};
+            let fotoUrl = recetaActual.foto_url || recetaActual.foto || null;
+            if (fotoFile) {
+              fotoUrl = await subirFoto(fotoFile);
+            }
+
             const { data, error } = await supabase
               .from("recetas")
               .update({
@@ -385,6 +386,11 @@
             const idx = recetas.findIndex((r) => r.id === editingId);
             if (idx !== -1) recetas[idx] = { ...recetas[idx], ...data };
           } else {
+            let fotoUrl = null;
+            if (fotoFile) {
+              fotoUrl = await subirFoto(fotoFile);
+            }
+
             const nuevaReceta = {
               id: crypto.randomUUID(),
               titulo,
