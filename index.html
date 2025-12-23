@@ -50,13 +50,6 @@
           <h2>Desde tu ordenador o tu movil</h2>
           <p class="muted">Cualquiera puede verlas; solo usuarios registrados pueden guardarlas.</p>
         </div>
-        <div class="actions">
-          <button type="button" id="exportar" class="ghost">Exportar (.json)</button>
-          <label class="ghost file-label">
-            Importar
-            <input type="file" id="importar" accept="application/json" hidden>
-          </label>
-        </div>
       </div>
 
       <form id="recipe-form" class="stack" autocomplete="off">
@@ -155,8 +148,6 @@
       const fotoInput = document.getElementById("foto");
       const previewImg = document.getElementById("preview-img");
       const submitBtn = document.getElementById("submit-btn");
-      const exportBtn = document.getElementById("exportar");
-      const importInput = document.getElementById("importar");
       const template = document.getElementById("receta-template");
       const loginOverlay = document.getElementById("login-overlay");
       const loginForm = document.getElementById("login-form");
@@ -206,51 +197,6 @@
           showPreview(dataUrl);
         });
 
-        exportBtn.addEventListener("click", () => {
-          const blob = new Blob([JSON.stringify(recetas, null, 2)], { type: "application/json" });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "recetas.json";
-          a.click();
-          URL.revokeObjectURL(url);
-        });
-
-        importInput.addEventListener("change", async (event) => {
-          const file = event.target.files[0];
-          if (!file) return;
-          if (!currentSession) {
-            alert("Inicia sesion para importar recetas.");
-            showLogin();
-            importInput.value = "";
-            return;
-          }
-          try {
-            const text = await file.text();
-            const data = JSON.parse(text);
-            if (!Array.isArray(data)) throw new Error("Formato inesperado");
-            const normalizadas = data.map((item) => ({
-              id: item.id || crypto.randomUUID(),
-              titulo: item.titulo || "",
-              resumen: item.resumen || "",
-              ingredientes: item.ingredientes || [],
-              pasos: item.pasos || [],
-              foto_url: item.foto_url || item.foto || null,
-              fecha: item.fecha || new Date().toISOString(),
-              created_by: item.created_by || null,
-            }));
-            const { data: insertadas, error } = await supabase.from("recetas").insert(normalizadas).select();
-            if (error) throw error;
-            recetas.unshift(...(insertadas || []));
-            renderRecetas();
-          } catch (err) {
-            alert("No se pudo importar el archivo. Asegurate de que es un .json exportado aqui.");
-            console.error(err);
-          } finally {
-            importInput.value = "";
-          }
-        });
-
         recetasContainer.addEventListener("click", async (event) => {
           const img = event.target.closest(".receta-img");
           if (img && img.dataset.full) {
@@ -291,7 +237,7 @@
           authUser.textContent = "";
         }
         authHint.textContent = isLogged
-          ? "Puedes guardar, importar y eliminar recetas."
+          ? "Puedes guardar y eliminar recetas."
           : "Inicia sesion para guardar recetas.";
         formPanel.classList.toggle("hidden", !isLogged || !formVisible);
         submitBtn.disabled = !isLogged;
