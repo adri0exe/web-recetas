@@ -49,6 +49,7 @@ p {
   right: 0;
   display: flex;
   gap: 10px;
+  align-items: center;
 }
 
 .hero-actions {
@@ -97,12 +98,6 @@ p {
   border-radius: 999px;
   font-weight: 600;
   letter-spacing: 0.02em;
-}
-
-.lead {
-  margin-top: 10px;
-  font-size: 1.05rem;
-  color: var(--muted);
 }
 
 .layout {
@@ -179,10 +174,6 @@ p {
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
 
-small {
-  font-weight: 400;
-}
-
 button,
 .file-label {
   font: inherit;
@@ -203,10 +194,6 @@ button,
   box-shadow: 0 10px 30px rgba(255, 112, 67, 0.25);
 }
 
-.primary:active {
-  transform: translateY(1px);
-}
-
 .ghost {
   background: transparent;
   border: 1px solid var(--border);
@@ -215,18 +202,6 @@ button,
 
 .ghost:hover {
   background: #fff7f1;
-}
-
-.actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.file-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
 }
 
 .preview {
