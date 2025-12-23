@@ -453,24 +453,23 @@ button,
   body {
     padding: 16px;
   }
+}
 
-  .receta-header {
+@media (max-width: 720px) {
+  .receta {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      "head"
+      "media"
+      "body"
+      "meta";
   }
 
-  .panel-header {
-    flex-direction: column;
-    align-items: flex-start;
+  .receta-media {
+    order: 2;
   }
 
-  .actions {
-    width: 100%;
-    flex-wrap: wrap;
-  }
-
-  .actions .ghost {
-    flex: 1 1 auto;
-    justify-content: center;
-    text-align: center;
+  .receta-body {
+    order: 3;
   }
 }
