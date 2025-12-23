@@ -72,13 +72,13 @@
           <div class="field">
             <span>Categoria</span>
             <div class="category-options" id="categoria-options">
-              <label class="tag-option"><input type="radio" name="categoria" value=""> Primero</label>
-              <label class="tag-option"><input type="radio" name="categoria" value="Salsas"> Acompañante</label>
+              <label class="tag-option"><input type="radio" name="categoria" value=""> Sin categoria</label>
               <label class="tag-option"><input type="radio" name="categoria" value="Entrantes"> Entrantes</label>
+              <label class="tag-option"><input type="radio" name="categoria" value="Primeros"> Primeros</label>
+              <label class="tag-option"><input type="radio" name="categoria" value="Acompanante"> Acompanante</label>
               <label class="tag-option"><input type="radio" name="categoria" value="Guisos"> Guisos</label>
               <label class="tag-option"><input type="radio" name="categoria" value="Postres"> Postres</label>
               <label class="tag-option"><input type="radio" name="categoria" value="Rapidas"> Rapidas</label>
-              <label class="tag-option"><input type="radio" name="categoria" value="Ensaladas"> Ensaladas</label>
               <label class="tag-option"><input type="radio" name="categoria" value="Bebidas"> Bebidas</label>
               <label class="tag-option"><input type="radio" name="categoria" value="Salsas"> Salsas</label>
             </div>
@@ -331,6 +331,7 @@
       async function ensureSession() {
         const { data } = await supabase.auth.getSession();
         currentSession = data?.session || null;
+        await refreshUserMeta();
         updateAuthUI();
       }
 
@@ -392,6 +393,7 @@
           const { data, error } = await supabase.auth.signInWithPassword({ email, password });
           if (error) throw error;
           currentSession = data.session;
+          await refreshUserMeta();
           hideLogin();
           updateAuthUI();
         } catch (err) {
@@ -659,6 +661,17 @@
         return "Usuario";
       }
 
+      async function refreshUserMeta() {
+        try {
+          const { data } = await supabase.auth.getUser();
+          if (data?.user) {
+            currentSession = currentSession ? { ...currentSession, user: data.user } : { user: data.user };
+          }
+        } catch (err) {
+          console.warn("No se pudo refrescar el usuario", err);
+        }
+      }
+
       function toList(text) {
         return text
           .split(/\n+/)
@@ -762,3 +775,4 @@
   </script>
 </body>
 </html>
+
