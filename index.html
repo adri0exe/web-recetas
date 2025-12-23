@@ -232,8 +232,9 @@
       await ensureSession();
       formPanel.classList.add("hidden");
 
-      supabase.auth.onAuthStateChange((_event, session) => {
+      supabase.auth.onAuthStateChange(async (_event, session) => {
         currentSession = session;
+        await refreshUserMeta();
         updateAuthUI();
       });
 
@@ -775,4 +776,3 @@
   </script>
 </body>
 </html>
-
