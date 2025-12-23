@@ -7,13 +7,29 @@
   </head>
 
   <body>
-    <!-- Contenedor que Decap necesita para renderizar -->
     <div id="nc-root"></div>
 
-    <!-- Login de Netlify -->
-    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+    <script>
+      // Cargar scripts SOLO cuando el DOM ya existe
+      window.addEventListener("DOMContentLoaded", function () {
+        // Asegura que el root existe sí o sí
+        if (!document.getElementById("nc-root")) {
+          const root = document.createElement("div");
+          root.id = "nc-root";
+          document.body.appendChild(root);
+        }
 
-    <!-- Decap CMS -->
-    <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+        // 1) Netlify Identity
+        const idScript = document.createElement("script");
+        idScript.src = "https://identity.netlify.com/v1/netlify-identity-widget.js";
+        idScript.onload = function () {
+          // 2) Decap CMS
+          const cmsScript = document.createElement("script");
+          cmsScript.src = "https://unpkg.com/decap-cms@3.9.0/dist/decap-cms.js";
+          document.body.appendChild(cmsScript);
+        };
+        document.body.appendChild(idScript);
+      });
+    </script>
   </body>
 </html>
