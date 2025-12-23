@@ -429,7 +429,7 @@ function renderRecetas() {
     starBtn.disabled = !currentSession;
     starBtn.classList.toggle("hidden", !currentSession);
     const favorita = Boolean(receta.favorita);
-    starBtn.textContent = favorita ? "★" : "☆";
+    starBtn.textContent = favorita ? "\u2605" : "\u2606";
     starBtn.classList.toggle("starred", favorita);
     editBtn.dataset.id = receta.id;
     editBtn.disabled = !currentSession;
@@ -572,7 +572,7 @@ async function toggleFavorita(id, btn) {
     const { error } = await supabase.from("recetas").update({ favorita: nuevaMarca }).eq("id", id);
     if (error) throw error;
     if (receta) receta.favorita = nuevaMarca;
-    btn.textContent = nuevaMarca ? "★" : "☆";
+    btn.textContent = nuevaMarca ? "\u2605" : "\u2606";
     btn.classList.toggle("starred", nuevaMarca);
   } catch (err) {
     console.error(err);
