@@ -1,7 +1,9 @@
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+import { createClient } from "@supabase/supabase-js";
 
-const SUPABASE_URL = "https://qooglpugptjfgitndkdz.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_me8vRoE4wcZoSGzxLSuofA_-vnSFFQr";
+const SUPABASE_URL =
+  import.meta.env.VITE_SUPABASE_URL || "https://qooglpugptjfgitndkdz.supabase.co";
+const SUPABASE_ANON_KEY =
+  import.meta.env.VITE_SUPABASE_ANON_KEY || "sb_publishable_me8vRoE4wcZoSGzxLSuofA_-vnSFFQr";
 const BUCKET_NAME = "recetas-fotos";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
