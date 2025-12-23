@@ -111,6 +111,7 @@
         <p class="receta-summary"></p>
         <div class="receta-actions">
           <button type="button" class="ghost star-btn" data-accion="favorita" data-id="" aria-label="Marcar como favorita">☆</button>
+          <button type="button" class="ghost edit-btn" data-accion="editar" data-id="">Editar</button>
           <button type="button" class="ghost danger delete-btn" data-accion="eliminar" data-id="">Eliminar</button>
         </div>
       </div>
@@ -200,6 +201,29 @@
           const img = event.target.closest(".receta-img");
           if (img && img.dataset.full) {
             showLightbox(img.dataset.full, img.alt || "Foto de la receta");
+            return;
+          }
+
+          const editBtn = event.target.closest("[data-accion='editar']");
+          if (editBtn) {
+            if (!currentSession) {
+              alert("Inicia sesion para editar recetas.");
+              showLogin();
+              return;
+            }
+            const id = editBtn.dataset.id;
+            if (!id) return;
+            const receta = recetas.find((r) => r.id === id);
+            if (!receta) return;
+            formVisible = true;
+            formPanel.classList.remove("hidden");
+            toggleFormBtn.textContent = "Ocultar formulario";
+            form.titulo.value = receta.titulo || "";
+            form.resumen.value = receta.resumen || "";
+            form.ingredientes.value = (receta.ingredientes || []).join("\n");
+            form.pasos.value = (receta.pasos || []).join("\n");
+            form.dataset.editingId = id;
+            window.scrollTo({ top: 0, behavior: "smooth" });
             return;
           }
 
@@ -336,25 +360,49 @@
             fotoUrl = await subirFoto(fotoFile);
           }
 
-          const nuevaReceta = {
-            id: crypto.randomUUID(),
-            titulo,
-            resumen,
-            ingredientes,
-            pasos,
-            foto_url: fotoUrl,
-            fecha: new Date().toISOString(),
-            favorita: false,
-            created_by: currentSession?.user?.email || null,
-          };
+          const editingId = form.dataset.editingId;
+          if (editingId) {
+            const { data, error } = await supabase
+              .from("recetas")
+              .update({
+                titulo,
+                resumen,
+                ingredientes,
+                pasos,
+                foto_url: fotoUrl ?? null,
+              })
+              .eq("id", editingId)
+              .select()
+              .single();
+            if (error) throw error;
+            const idx = recetas.findIndex((r) => r.id === editingId);
+            if (idx !== -1) recetas[idx] = { ...recetas[idx], ...data };
+          } else {
+            const nuevaReceta = {
+              id: crypto.randomUUID(),
+              titulo,
+              resumen,
+              ingredientes,
+              pasos,
+              foto_url: fotoUrl,
+              fecha: new Date().toISOString(),
+              favorita: false,
+              created_by: currentSession?.user?.email || null,
+            };
 
-          const { data, error } = await supabase.from("recetas").insert(nuevaReceta).select().single();
-          if (error) throw error;
+            const { data, error } = await supabase.from("recetas").insert(nuevaReceta).select().single();
+            if (error) throw error;
 
-          recetas.unshift(data);
+            recetas.unshift(data);
+          }
+
           renderRecetas();
           form.reset();
+          delete form.dataset.editingId;
           hidePreview();
+          formVisible = false;
+          formPanel.classList.add("hidden");
+          toggleFormBtn.textContent = "Nueva receta";
         } catch (err) {
           console.error(err);
           const reason = err?.message || "No se pudo guardar la receta. Vuelve a intentarlo.";
@@ -380,25 +428,30 @@
           const imgEl = clone.querySelector(".receta-img");
           const ingredientesEl = clone.querySelector(".ingredientes");
           const pasosEl = clone.querySelector(".pasos");
-          const metaEl = clone.querySelector(".receta-meta");
-          const deleteBtn = clone.querySelector(".delete-btn");
-          const starBtn = clone.querySelector(".star-btn");
+        const metaEl = clone.querySelector(".receta-meta");
+        const deleteBtn = clone.querySelector(".delete-btn");
+        const starBtn = clone.querySelector(".star-btn");
+        const editBtn = clone.querySelector(".edit-btn");
 
           titleEl.textContent = receta.titulo;
           summaryEl.textContent = receta.resumen || "Sin descripcion";
           const autor = receta.created_by || "Autor desconocido";
           metaEl.textContent = `${formatFecha(receta.fecha)} - ${autor}`;
-          deleteBtn.dataset.id = receta.id;
-          deleteBtn.disabled = !currentSession;
-          deleteBtn.classList.toggle("hidden", !currentSession);
-          deleteBtn.hidden = !currentSession;
-          starBtn.dataset.id = receta.id;
-          starBtn.disabled = !currentSession;
-          starBtn.classList.toggle("hidden", !currentSession);
-          starBtn.hidden = !currentSession;
-          const favorita = Boolean(receta.favorita);
-          starBtn.textContent = favorita ? "\u2605" : "\u2606";
-          starBtn.classList.toggle("starred", favorita);
+        deleteBtn.dataset.id = receta.id;
+        deleteBtn.disabled = !currentSession;
+        deleteBtn.classList.toggle("hidden", !currentSession);
+        deleteBtn.hidden = !currentSession;
+        starBtn.dataset.id = receta.id;
+        starBtn.disabled = !currentSession;
+        starBtn.classList.toggle("hidden", !currentSession);
+        starBtn.hidden = !currentSession;
+        const favorita = Boolean(receta.favorita);
+        starBtn.textContent = favorita ? "\u2605" : "\u2606";
+        starBtn.classList.toggle("starred", favorita);
+        editBtn.dataset.id = receta.id;
+        editBtn.disabled = !currentSession;
+        editBtn.classList.toggle("hidden", !currentSession);
+        editBtn.hidden = !currentSession;
 
           const fotoUrl = receta.foto_url || receta.foto || null;
           if (fotoUrl) {

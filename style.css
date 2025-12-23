@@ -301,6 +301,17 @@ button,
   color: #b26b00;
 }
 
+.edit-btn {
+  background: #eef5ff;
+  border: 1px solid #cddcfa;
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+.edit-btn:hover {
+  background: #ddebff;
+}
+
 .danger {
   color: #b42318;
   border: 1px solid #f3c8c2;
