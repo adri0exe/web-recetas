@@ -408,16 +408,8 @@
 
       async function handleLogout() {
         await supabase.auth.signOut();
-        currentSession = null;
-        formVisible = false;
-        formPanel.classList.add("hidden");
-        toggleFormBtn.textContent = "Nueva receta";
-        showFavoritesOnly = false;
-        favoritesToggle.textContent = "Ver favoritos";
-        showLogin();
-        await ensureSession();
-        renderRecetas();
-        updateAuthUI();
+        // recargar garantiza limpiar UI y token
+        window.location.reload();
       }
 
       async function handleSubmit(event) {
