@@ -219,6 +219,7 @@
               pasos: item.pasos || [],
               foto_url: item.foto_url || item.foto || null,
               fecha: item.fecha || new Date().toISOString(),
+              created_by: item.created_by || null,
             }));
             const { data: insertadas, error } = await supabase.from("recetas").insert(normalizadas).select();
             if (error) throw error;
@@ -353,6 +354,7 @@
             pasos,
             foto_url: fotoUrl,
             fecha: new Date().toISOString(),
+            created_by: currentSession?.user?.email || null,
           };
 
           const { data, error } = await supabase.from("recetas").insert(nuevaReceta).select().single();
@@ -392,7 +394,8 @@
 
           titleEl.textContent = receta.titulo;
           summaryEl.textContent = receta.resumen || "Sin descripcion";
-          metaEl.textContent = formatFecha(receta.fecha);
+          const autor = receta.created_by || "Autor desconocido";
+          metaEl.textContent = `${formatFecha(receta.fecha)} · ${autor}`;
           deleteBtn.dataset.id = receta.id;
           deleteBtn.disabled = !currentSession;
           deleteBtn.classList.toggle("hidden", !currentSession);
