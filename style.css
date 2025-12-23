@@ -539,4 +539,10 @@ button,
   .receta-body {
     order: 3;
   }
+
+  .receta-actions {
+    position: static;
+    margin-top: 8px;
+    justify-content: flex-start;
+  }
 }
