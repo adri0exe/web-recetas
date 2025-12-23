@@ -408,8 +408,19 @@
 
       async function handleLogout() {
         await supabase.auth.signOut();
-        // recarga para limpiar sesión, UI y listeners sin intervención manual
-        window.location.reload();
+        currentSession = null;
+        formVisible = false;
+        formPanel.classList.add("hidden");
+        toggleFormBtn.textContent = "Nueva receta";
+        showFavoritesOnly = false;
+        favoritesToggle.textContent = "Ver favoritos";
+        searchInput.value = "";
+        searchTerm = "";
+        renderRecetas();
+        showLogin();
+        updateAuthUI();
+        // forzar recarga para limpiar cualquier resto de sesión almacenada
+        setTimeout(() => window.location.replace(window.location.href), 50);
       }
 
       async function handleSubmit(event) {
