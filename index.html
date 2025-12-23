@@ -394,6 +394,7 @@
           metaEl.textContent = formatFecha(receta.fecha);
           deleteBtn.dataset.id = receta.id;
           deleteBtn.disabled = !currentSession;
+          deleteBtn.classList.toggle("hidden", !currentSession);
 
           const fotoUrl = receta.foto_url || receta.foto || null;
           if (fotoUrl) {
