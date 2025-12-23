@@ -427,10 +427,11 @@
           const titulo = form.titulo.value.trim();
           const resumen = form.resumen.value.trim();
         const ingredientes = toList(form.ingredientes.value);
-        const pasos = toList(form.pasos.value);
-        const fotoFile = fotoInput.files[0] || null;
-        const categoria = (categoryInputs.find((input) => input.checked)?.value || "").trim();
-        const tags = tagInputs.filter((input) => input.checked).map((input) => input.value);
+          const pasos = toList(form.pasos.value);
+          const fotoFile = fotoInput.files[0] || null;
+          const categoria = (categoryInputs.find((input) => input.checked)?.value || "").trim();
+          const tags = tagInputs.filter((input) => input.checked).map((input) => input.value);
+          const autorNombre = getDisplayName(currentSession.user);
 
         if (!titulo || !ingredientes.length || !pasos.length) {
           alert("Completa al menos el nombre, ingredientes y pasos.");
@@ -453,6 +454,7 @@
                 ingredientes,
                 pasos,
                 foto_url: fotoUrl ?? null,
+                created_by_name: recetaActual.created_by_name || autorNombre || recetaActual.created_by || null,
                 categoria,
                 tags,
               })
@@ -480,6 +482,7 @@
               categoria,
               tags,
               created_by: currentSession?.user?.email || null,
+              created_by_name: autorNombre || null,
             };
 
             const { data, error } = await supabase.from("recetas").insert(nuevaReceta).select().single();
@@ -535,8 +538,15 @@
 
           titleEl.textContent = receta.titulo;
           summaryEl.textContent = receta.resumen || "Sin descripcion";
-          const autor = receta.created_by || "Autor desconocido";
-          metaEl.textContent = `${formatFecha(receta.fecha)} - ${autor}`;
+          const autor = receta.created_by_name || receta.created_by || "Autor desconocido";
+          const autorDisplay =
+            receta.created_by_name ||
+            (currentSession?.user?.email && receta.created_by === currentSession.user.email
+              ? getDisplayName(currentSession.user)
+              : receta.created_by
+              ? receta.created_by.split("@")[0]
+              : "Autor desconocido");
+          metaEl.textContent = `${formatFecha(receta.fecha)} - ${autorDisplay}`;
         deleteBtn.dataset.id = receta.id;
         deleteBtn.disabled = !currentSession;
         deleteBtn.classList.toggle("hidden", !currentSession);
