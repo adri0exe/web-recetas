@@ -270,6 +270,7 @@
           : "Inicia sesion para guardar recetas.";
         formPanel.classList.toggle("hidden", !isLogged);
         submitBtn.disabled = !isLogged;
+        renderRecetas();
       }
 
       async function syncRecetas() {
@@ -395,6 +396,7 @@
           deleteBtn.dataset.id = receta.id;
           deleteBtn.disabled = !currentSession;
           deleteBtn.classList.toggle("hidden", !currentSession);
+          deleteBtn.hidden = !currentSession;
 
           const fotoUrl = receta.foto_url || receta.foto || null;
           if (fotoUrl) {
