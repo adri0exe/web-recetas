@@ -187,6 +187,7 @@
       const SUPABASE_ANON_KEY = "sb_publishable_me8vRoE4wcZoSGzxLSuofA_-vnSFFQr";
       const BUCKET_NAME = "recetas-fotos";
       const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      window.supabaseClient = supabase; // para poder usar supabase.auth.getUser() desde la consola
 
       let recetas = [];
       let currentSession = null;
