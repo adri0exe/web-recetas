@@ -407,20 +407,14 @@
       }
 
       async function handleLogout() {
-        await supabase.auth.signOut();
-        currentSession = null;
-        formVisible = false;
-        formPanel.classList.add("hidden");
-        toggleFormBtn.textContent = "Nueva receta";
-        showFavoritesOnly = false;
-        favoritesToggle.textContent = "Ver favoritos";
-        searchInput.value = "";
-        searchTerm = "";
-        renderRecetas();
-        showLogin();
-        updateAuthUI();
-        // forzar recarga para limpiar cualquier resto de sesión almacenada
-        setTimeout(() => window.location.replace(window.location.href), 50);
+        try {
+          await supabase.auth.signOut();
+        } catch (err) {
+          console.error("Error al cerrar sesión", err);
+        } finally {
+          // recarga inmediata para limpiar cualquier estado residual
+          window.location.href = window.location.href;
+        }
       }
 
       async function handleSubmit(event) {
