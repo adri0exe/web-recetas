@@ -1,6 +1,6 @@
 backend:
   name: github
-  repo: TU_USUARIO/recetas-mama
+  repo: adri0exe/recetas-mama
   branch: main
 
 media_folder: "images"
