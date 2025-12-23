@@ -585,23 +585,31 @@
           resultado = resultado.filter((receta) => Boolean(receta.favorita));
         }
         if (!term) return resultado;
-        const lower = term.toLowerCase();
+        const query = normalizeText(term);
         return resultado.filter((receta) => {
-          const titulo = (receta.titulo || "").toLowerCase();
-          const resumen = (receta.resumen || "").toLowerCase();
-          const ingredientes = (receta.ingredientes || []).join(" ").toLowerCase();
-          const pasos = (receta.pasos || []).join(" ").toLowerCase();
-          const categoria = (receta.categoria || "").toLowerCase();
-          const tags = (receta.tags || []).join(" ").toLowerCase();
+          const titulo = normalizeText(receta.titulo);
+          const resumen = normalizeText(receta.resumen);
+          const ingredientes = normalizeText((receta.ingredientes || []).join(" "));
+          const pasos = normalizeText((receta.pasos || []).join(" "));
+          const categoria = normalizeText(receta.categoria);
+          const tags = normalizeText((receta.tags || []).join(" "));
           return (
-            titulo.includes(lower) ||
-            resumen.includes(lower) ||
-            ingredientes.includes(lower) ||
-            pasos.includes(lower) ||
-            categoria.includes(lower) ||
-            tags.includes(lower)
+            titulo.includes(query) ||
+            resumen.includes(query) ||
+            ingredientes.includes(query) ||
+            pasos.includes(query) ||
+            categoria.includes(query) ||
+            tags.includes(query)
           );
         });
+      }
+
+      function normalizeText(value) {
+        return (value || "")
+          .toString()
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "");
       }
 
       function toggleFavorites() {
@@ -713,4 +721,3 @@
   </script>
 </body>
 </html>
-
