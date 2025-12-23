@@ -241,7 +241,7 @@ button,
   display: grid;
   grid-template-columns: 1fr 200px;
   gap: 12px;
-  align-items: center;
+  align-items: start;
 }
 
 .receta-img {
@@ -253,7 +253,7 @@ button,
 }
 
 .receta-title {
-  margin: 6px 0;
+  margin: 0 0 4px;
   font-size: 1.3rem;
 }
 
