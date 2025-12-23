@@ -309,6 +309,38 @@ button,
   margin-top: 0;
 }
 
+.receta-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.category-badge {
+  background: #eef0ff;
+  color: #3e3a7a;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.receta-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag-chip {
+  background: #f2f7f5;
+  color: #2f4f4f;
+  padding: 4px 8px;
+  border-radius: 12px;
+  border: 1px solid #e0ece6;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .star-btn {
   min-width: 44px;
   background: #fff7e6;
@@ -455,6 +487,23 @@ button,
   border: 1px solid #ddd;
   padding: 8px 12px;
   border-radius: 10px;
+}
+
+.tags-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff9f3;
+}
+
+.tag-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
 }
 
 @media (max-width: 820px) {

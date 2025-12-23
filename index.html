@@ -70,6 +70,37 @@
 
         <div class="grid">
           <label class="field">
+            <span>Categoria</span>
+            <select id="categoria" name="categoria">
+              <option value="">Sin categoria</option>
+              <option>Entrantes</option>
+              <option>Guisos</option>
+              <option>Postres</option>
+              <option>Rapidas</option>
+              <option>Ensaladas</option>
+              <option>Bebidas</option>
+              <option>Salsas</option>
+            </select>
+          </label>
+
+          <div class="field">
+            <span>Tags</span>
+            <div class="tags-grid" id="tags-options">
+              <label class="tag-option"><input type="checkbox" name="tags" value="Vegetariano"> Vegetariano</label>
+              <label class="tag-option"><input type="checkbox" name="tags" value="Vegano"> Vegano</label>
+              <label class="tag-option"><input type="checkbox" name="tags" value="Sin gluten"> Sin gluten</label>
+              <label class="tag-option"><input type="checkbox" name="tags" value="Sin lactosa"> Sin lactosa</label>
+              <label class="tag-option"><input type="checkbox" name="tags" value="Picante"> Picante</label>
+              <label class="tag-option"><input type="checkbox" name="tags" value="Para congelar"> Para congelar</label>
+              <label class="tag-option"><input type="checkbox" name="tags" value="Microondas"> Microondas</label>
+              <label class="tag-option"><input type="checkbox" name="tags" value="Batch cooking"> Batch cooking</label>
+              <label class="tag-option"><input type="checkbox" name="tags" value="Light"> Light</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid">
+          <label class="field">
             <span>Ingredientes (uno por linea) *</span>
             <textarea id="ingredientes" name="ingredientes" rows="5" required placeholder="3 manzanas&#10;200 g harina&#10;1 huevo"></textarea>
           </label>
@@ -125,12 +156,18 @@
         <img class="receta-img" alt="">
       </div>
       <div class="receta-body">
+        <div class="receta-badges">
+          <span class="badge category-badge" hidden></span>
+          <div class="receta-tags"></div>
+        </div>
         <div class="pill">Ingredientes</div>
         <ul class="receta-list ingredientes"></ul>
         <div class="pill">Pasos</div>
         <ol class="receta-list pasos"></ol>
       </div>
-      <div class="receta-meta"></div>
+      <div class="receta-meta">
+        <span class="receta-meta-text"></span>
+      </div>
     </article>
   </template>
 
@@ -173,6 +210,8 @@
       const lightboxImg = document.getElementById("lightbox-img");
       const closeLightboxBtn = document.getElementById("close-lightbox");
       const searchInput = document.getElementById("search-receta");
+      const categoriaSelect = document.getElementById("categoria");
+      const tagInputs = Array.from(document.querySelectorAll('input[name="tags"]'));
       let formVisible = false;
       let searchTerm = "";
       let showFavoritesOnly = false;
@@ -236,6 +275,10 @@
             form.resumen.value = receta.resumen || "";
             form.ingredientes.value = (receta.ingredientes || []).join("\n");
             form.pasos.value = (receta.pasos || []).join("\n");
+            categoriaSelect.value = receta.categoria || "";
+            tagInputs.forEach((input) => {
+              input.checked = (receta.tags || []).includes(input.value);
+            });
             form.dataset.editingId = id;
             window.scrollTo({ top: 0, behavior: "smooth" });
             return;
@@ -362,14 +405,16 @@
         try {
           const titulo = form.titulo.value.trim();
           const resumen = form.resumen.value.trim();
-          const ingredientes = toList(form.ingredientes.value);
-          const pasos = toList(form.pasos.value);
-          const fotoFile = fotoInput.files[0] || null;
+        const ingredientes = toList(form.ingredientes.value);
+        const pasos = toList(form.pasos.value);
+        const fotoFile = fotoInput.files[0] || null;
+        const categoria = categoriaSelect.value || "";
+        const tags = tagInputs.filter((input) => input.checked).map((input) => input.value);
 
-          if (!titulo || !ingredientes.length || !pasos.length) {
-            alert("Completa al menos el nombre, ingredientes y pasos.");
-            return;
-          }
+        if (!titulo || !ingredientes.length || !pasos.length) {
+          alert("Completa al menos el nombre, ingredientes y pasos.");
+          return;
+        }
 
           const editingId = form.dataset.editingId;
           if (editingId) {
@@ -387,6 +432,8 @@
                 ingredientes,
                 pasos,
                 foto_url: fotoUrl ?? null,
+                categoria,
+                tags,
               })
               .eq("id", editingId)
               .select()
@@ -409,6 +456,8 @@
               foto_url: fotoUrl,
               fecha: new Date().toISOString(),
               favorita: false,
+              categoria,
+              tags,
               created_by: currentSession?.user?.email || null,
             };
 
@@ -452,10 +501,10 @@
           const imgEl = clone.querySelector(".receta-img");
           const ingredientesEl = clone.querySelector(".ingredientes");
           const pasosEl = clone.querySelector(".pasos");
-        const metaEl = clone.querySelector(".receta-meta");
-        const deleteBtn = clone.querySelector(".delete-btn");
-        const starBtn = clone.querySelector(".star-btn");
-        const editBtn = clone.querySelector(".edit-btn");
+          const metaEl = clone.querySelector(".receta-meta-text");
+          const deleteBtn = clone.querySelector(".delete-btn");
+          const starBtn = clone.querySelector(".star-btn");
+          const editBtn = clone.querySelector(".edit-btn");
 
           titleEl.textContent = receta.titulo;
           summaryEl.textContent = receta.resumen || "Sin descripcion";
@@ -499,6 +548,23 @@
             const li = document.createElement("li");
             li.textContent = item;
             pasosEl.appendChild(li);
+          });
+
+          const categoriaBadge = clone.querySelector(".category-badge");
+          if (receta.categoria) {
+            categoriaBadge.textContent = receta.categoria;
+            categoriaBadge.hidden = false;
+          } else {
+            categoriaBadge.hidden = true;
+          }
+
+          const tagsWrap = clone.querySelector(".receta-tags");
+          tagsWrap.innerHTML = "";
+          (receta.tags || []).forEach((tag) => {
+            const chip = document.createElement("span");
+            chip.className = "tag-chip";
+            chip.textContent = tag;
+            tagsWrap.appendChild(chip);
           });
 
           recetasContainer.appendChild(clone);
