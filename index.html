@@ -395,7 +395,7 @@
           titleEl.textContent = receta.titulo;
           summaryEl.textContent = receta.resumen || "Sin descripcion";
           const autor = receta.created_by || "Autor desconocido";
-          metaEl.textContent = `${formatFecha(receta.fecha)} · ${autor}`;
+          metaEl.textContent = `${formatFecha(receta.fecha)} - ${autor}`;
           deleteBtn.dataset.id = receta.id;
           deleteBtn.disabled = !currentSession;
           deleteBtn.classList.toggle("hidden", !currentSession);
