@@ -415,6 +415,8 @@
         showFavoritesOnly = false;
         favoritesToggle.textContent = "Ver favoritos";
         showLogin();
+        await ensureSession();
+        renderRecetas();
         updateAuthUI();
       }
 
