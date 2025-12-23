@@ -337,6 +337,10 @@ button,
   border-radius: 10px;
 }
 
+.hidden {
+  display: none !important;
+}
+
 .empty {
   text-align: center;
   padding: 32px;

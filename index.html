@@ -40,7 +40,7 @@
   </header>
 
   <main class="layout">
-    <section class="panel form-panel">
+    <section class="panel form-panel" id="form-panel">
       <div class="panel-header">
         <div>
           <p class="eyebrow">Anade una receta</p>
@@ -160,6 +160,7 @@
       const loginToggle = document.getElementById("login-toggle");
       const logoutBtn = document.getElementById("logout-btn");
       const authHint = document.getElementById("auth-hint");
+      const formPanel = document.getElementById("form-panel");
 
       attachListeners();
       await syncRecetas();
@@ -259,6 +260,8 @@
         authHint.textContent = isLogged
           ? "Puedes guardar, importar y eliminar recetas."
           : "Inicia sesion para guardar recetas.";
+        formPanel.classList.toggle("hidden", !isLogged);
+        submitBtn.disabled = !isLogged;
       }
 
       async function syncRecetas() {
