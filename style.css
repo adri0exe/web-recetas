@@ -51,6 +51,16 @@ p {
   gap: 10px;
 }
 
+.auth-user {
+  align-self: center;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: #fff3ec;
+  border: 1px solid var(--border);
+  font-weight: 600;
+  color: var(--ink);
+}
+
 .badge {
   display: inline-flex;
   align-items: center;

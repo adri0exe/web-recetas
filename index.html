@@ -32,9 +32,9 @@
   <header class="hero">
     <div class="auth-actions">
       <button type="button" class="ghost" id="login-toggle">Iniciar sesion</button>
+      <div class="auth-user" id="auth-user" hidden></div>
       <button type="button" class="ghost danger" id="logout-btn" hidden>Cerrar sesion</button>
     </div>
-    <p class="badge">Siempre contigo</p>
     <h1>Recetas caseras</h1>
     <p class="lead">Guarda tus ideas en casa o fuera, con foto, ingredientes y pasos.</p>
   </header>
@@ -161,6 +161,7 @@
       const logoutBtn = document.getElementById("logout-btn");
       const authHint = document.getElementById("auth-hint");
       const formPanel = document.getElementById("form-panel");
+      const authUser = document.getElementById("auth-user");
 
       attachListeners();
       await syncRecetas();
@@ -257,6 +258,13 @@
         const isLogged = Boolean(currentSession);
         loginToggle.hidden = isLogged;
         logoutBtn.hidden = !isLogged;
+        if (isLogged && currentSession?.user?.email) {
+          authUser.hidden = false;
+          authUser.textContent = currentSession.user.email;
+        } else {
+          authUser.hidden = true;
+          authUser.textContent = "";
+        }
         authHint.textContent = isLogged
           ? "Puedes guardar, importar y eliminar recetas."
           : "Inicia sesion para guardar recetas.";
