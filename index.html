@@ -12,15 +12,15 @@
   <div id="login-overlay" class="login-overlay" hidden>
     <div class="login-card">
       <p class="badge">Acceso privado</p>
-      <h2>Inicia sesión</h2>
-      <p class="muted">Solo el propietario puede entrar. Usa tu correo y contraseña configurados en Supabase.</p>
+      <h2>Inicia sesion</h2>
+      <p class="muted">Solo los usuarios registrados pueden crear/editar recetas.</p>
       <form id="login-form" class="stack" autocomplete="off">
         <label class="field">
           <span>Correo</span>
           <input type="email" id="login-email" name="login-email" required placeholder="tu-correo@ejemplo.com">
         </label>
         <label class="field">
-          <span>Contraseña</span>
+          <span>Contrasena</span>
           <input type="password" id="login-password" name="login-password" required placeholder="********">
         </label>
         <button type="submit" class="primary" id="login-btn">Entrar</button>
@@ -30,6 +30,10 @@
   </div>
 
   <header class="hero">
+    <div class="auth-actions">
+      <button type="button" class="ghost" id="login-toggle">Iniciar sesion</button>
+      <button type="button" class="ghost danger" id="logout-btn" hidden>Cerrar sesion</button>
+    </div>
     <p class="badge">Siempre contigo</p>
     <h1>Recetas caseras</h1>
     <p class="lead">Guarda tus ideas en casa o fuera, con foto, ingredientes y pasos.</p>
@@ -41,7 +45,7 @@
         <div>
           <p class="eyebrow">Anade una receta</p>
           <h2>Desde tu ordenador o tu movil</h2>
-          <p class="muted">Se guarda en Supabase para verla en cualquier dispositivo.</p>
+          <p class="muted">Cualquiera puede verlas; solo usuarios registrados pueden guardarlas.</p>
         </div>
         <div class="actions">
           <button type="button" id="exportar" class="ghost">Exportar (.json)</button>
@@ -89,6 +93,7 @@
         </div>
 
         <button type="submit" class="primary" id="submit-btn">Guardar receta</button>
+        <p class="muted" id="auth-hint">Inicia sesion para guardar recetas.</p>
       </form>
     </section>
 
@@ -133,10 +138,11 @@
       const SUPABASE_URL = "https://qooglpugptjfgitndkdz.supabase.co";
       const SUPABASE_ANON_KEY = "sb_publishable_me8vRoE4wcZoSGzxLSuofA_-vnSFFQr";
       const BUCKET_NAME = "recetas-fotos";
-      const ALLOWED_EMAIL = "adrilm195@gmail.com";
       const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
       let recetas = [];
+      let currentSession = null;
+
       const form = document.getElementById("recipe-form");
       const recetasContainer = document.getElementById("recetas");
       const fotoInput = document.getElementById("foto");
@@ -151,23 +157,24 @@
       const loginPassword = document.getElementById("login-password");
       const loginBtn = document.getElementById("login-btn");
       const loginError = document.getElementById("login-error");
+      const loginToggle = document.getElementById("login-toggle");
+      const logoutBtn = document.getElementById("logout-btn");
+      const authHint = document.getElementById("auth-hint");
 
       attachListeners();
+      await syncRecetas();
       await ensureSession();
 
-      const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-        if (session && isAllowedUser(session.user)) {
-          hideLogin();
-          await syncRecetas();
-        } else {
-          showLogin();
-        }
+      supabase.auth.onAuthStateChange((_event, session) => {
+        currentSession = session;
+        updateAuthUI();
       });
 
       function attachListeners() {
         form.addEventListener("submit", handleSubmit);
-
         loginForm.addEventListener("submit", handleLogin);
+        loginToggle.addEventListener("click", showLogin);
+        logoutBtn.addEventListener("click", handleLogout);
 
         fotoInput.addEventListener("change", async (event) => {
           const file = event.target.files[0];
@@ -192,6 +199,12 @@
         importInput.addEventListener("change", async (event) => {
           const file = event.target.files[0];
           if (!file) return;
+          if (!currentSession) {
+            alert("Inicia sesion para importar recetas.");
+            showLogin();
+            importInput.value = "";
+            return;
+          }
           try {
             const text = await file.text();
             const data = JSON.parse(text);
@@ -220,6 +233,11 @@
         recetasContainer.addEventListener("click", async (event) => {
           const btn = event.target.closest("[data-accion='eliminar']");
           if (!btn) return;
+          if (!currentSession) {
+            alert("Inicia sesion para eliminar recetas.");
+            showLogin();
+            return;
+          }
           const id = btn.dataset.id;
           if (!id) return;
           const confirmar = confirm("Eliminar esta receta?");
@@ -230,17 +248,17 @@
 
       async function ensureSession() {
         const { data } = await supabase.auth.getSession();
-        const session = data?.session;
-        if (session && isAllowedUser(session.user)) {
-          hideLogin();
-          await syncRecetas();
-        } else {
-          showLogin();
-        }
+        currentSession = data?.session || null;
+        updateAuthUI();
       }
 
-      function isAllowedUser(user) {
-        return Boolean(user?.email && user.email.toLowerCase() === ALLOWED_EMAIL.toLowerCase());
+      function updateAuthUI() {
+        const isLogged = Boolean(currentSession);
+        loginToggle.hidden = isLogged;
+        logoutBtn.hidden = !isLogged;
+        authHint.textContent = isLogged
+          ? "Puedes guardar, importar y eliminar recetas."
+          : "Inicia sesion para guardar recetas.";
       }
 
       async function syncRecetas() {
@@ -270,12 +288,9 @@
           const password = loginPassword.value;
           const { data, error } = await supabase.auth.signInWithPassword({ email, password });
           if (error) throw error;
-          if (!isAllowedUser(data.session.user)) {
-            await supabase.auth.signOut();
-            throw new Error("Este usuario no esta autorizado para entrar.");
-          }
-          hideLogin(true);
-          await syncRecetas();
+          currentSession = data.session;
+          hideLogin();
+          updateAuthUI();
         } catch (err) {
           loginError.hidden = false;
           loginError.textContent = err.message || "No se pudo iniciar sesion.";
@@ -284,8 +299,20 @@
         }
       }
 
+      async function handleLogout() {
+        await supabase.auth.signOut();
+        currentSession = null;
+        updateAuthUI();
+      }
+
       async function handleSubmit(event) {
         event.preventDefault();
+        if (!currentSession) {
+          alert("Inicia sesion para guardar recetas.");
+          showLogin();
+          return;
+        }
+
         submitBtn.disabled = true;
         submitBtn.textContent = "Guardando...";
 
@@ -354,6 +381,7 @@
           summaryEl.textContent = receta.resumen || "Sin descripcion";
           metaEl.textContent = formatFecha(receta.fecha);
           deleteBtn.dataset.id = receta.id;
+          deleteBtn.disabled = !currentSession;
 
           const fotoUrl = receta.foto_url || receta.foto || null;
           if (fotoUrl) {
@@ -412,14 +440,12 @@
 
       function showLogin() {
         loginOverlay.hidden = false;
+        loginOverlay.style.display = "grid";
       }
 
-      function hideLogin(removeOverlay = false) {
+      function hideLogin() {
         loginOverlay.hidden = true;
         loginOverlay.style.display = "none";
-        if (removeOverlay) {
-          loginOverlay.remove();
-        }
       }
 
       async function eliminarReceta(id, btn) {
