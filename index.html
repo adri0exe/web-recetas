@@ -537,7 +537,7 @@
       function toList(text) {
         return text
           .split(/\n+/)
-          .map((line) => line.replace(/^\d+[.)]?\s*/, "").trim())
+          .map((line) => line.trim())
           .filter(Boolean);
       }
 
