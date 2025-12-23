@@ -135,6 +135,11 @@
     </article>
   </template>
 
+  <div id="image-lightbox" class="image-lightbox hidden">
+    <button type="button" id="close-lightbox">Cerrar</button>
+    <img id="lightbox-img" alt="Foto de receta ampliada">
+  </div>
+
   <script>
     (async function () {
       const SUPABASE_URL = "https://qooglpugptjfgitndkdz.supabase.co";
@@ -165,6 +170,9 @@
       const formPanel = document.getElementById("form-panel");
       const authUser = document.getElementById("auth-user");
       const toggleFormBtn = document.getElementById("toggle-form");
+      const lightbox = document.getElementById("image-lightbox");
+      const lightboxImg = document.getElementById("lightbox-img");
+      const closeLightboxBtn = document.getElementById("close-lightbox");
       let formVisible = false;
 
       attachListeners();
@@ -183,6 +191,10 @@
         loginToggle.addEventListener("click", showLogin);
         logoutBtn.addEventListener("click", handleLogout);
         toggleFormBtn.addEventListener("click", toggleFormVisibility);
+        closeLightboxBtn.addEventListener("click", hideLightbox);
+        lightbox.addEventListener("click", (e) => {
+          if (e.target === lightbox) hideLightbox();
+        });
 
         fotoInput.addEventListener("change", async (event) => {
           const file = event.target.files[0];
@@ -240,6 +252,12 @@
         });
 
         recetasContainer.addEventListener("click", async (event) => {
+          const img = event.target.closest(".receta-img");
+          if (img && img.dataset.full) {
+            showLightbox(img.dataset.full, img.alt || "Foto de la receta");
+            return;
+          }
+
           const btn = event.target.closest("[data-accion='eliminar']");
           if (!btn) return;
           if (!currentSession) {
@@ -419,6 +437,7 @@
           if (fotoUrl) {
             imgEl.src = fotoUrl;
             imgEl.alt = `Foto de ${receta.titulo}`;
+            imgEl.dataset.full = fotoUrl;
             imgEl.hidden = false;
           } else {
             imgEl.hidden = true;
@@ -501,6 +520,18 @@
         if (error) throw error;
         const { data: publicData } = supabase.storage.from(BUCKET_NAME).getPublicUrl(data.path);
         return publicData.publicUrl;
+      }
+
+      function showLightbox(url, alt) {
+        lightboxImg.src = url;
+        lightboxImg.alt = alt || "Foto de receta";
+        lightbox.classList.remove("hidden");
+      }
+
+      function hideLightbox() {
+        lightbox.classList.add("hidden");
+        lightboxImg.removeAttribute("src");
+        lightboxImg.removeAttribute("alt");
       }
 
       function fileToDataURL(file) {
