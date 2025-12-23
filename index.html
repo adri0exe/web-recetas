@@ -92,6 +92,9 @@
           <p class="tag">Receta</p>
           <h3 class="receta-title"></h3>
           <p class="receta-summary"></p>
+          <div class="receta-actions">
+            <button type="button" class="ghost danger delete-btn" data-accion="eliminar" data-id="">Eliminar</button>
+          </div>
         </div>
         <img class="receta-img" alt="">
       </div>
@@ -174,6 +177,16 @@
           } finally {
             importInput.value = "";
           }
+        });
+
+        recetasContainer.addEventListener("click", async (event) => {
+          const btn = event.target.closest("[data-accion='eliminar']");
+          if (!btn) return;
+          const id = btn.dataset.id;
+          if (!id) return;
+          const confirmar = confirm("Eliminar esta receta?");
+          if (!confirmar) return;
+          await eliminarReceta(id, btn);
         });
       }
 
@@ -258,10 +271,12 @@
           const ingredientesEl = clone.querySelector(".ingredientes");
           const pasosEl = clone.querySelector(".pasos");
           const metaEl = clone.querySelector(".receta-meta");
+          const deleteBtn = clone.querySelector(".delete-btn");
 
           titleEl.textContent = receta.titulo;
           summaryEl.textContent = receta.resumen || "Sin descripcion";
           metaEl.textContent = formatFecha(receta.fecha);
+          deleteBtn.dataset.id = receta.id;
 
           const fotoUrl = receta.foto_url || receta.foto || null;
           if (fotoUrl) {
@@ -316,6 +331,21 @@
       function showPreview(dataUrl) {
         previewImg.hidden = false;
         previewImg.src = dataUrl;
+      }
+
+      async function eliminarReceta(id, btn) {
+        try {
+          btn.disabled = true;
+          const { error } = await supabase.from("recetas").delete().eq("id", id);
+          if (error) throw error;
+          recetas = recetas.filter((receta) => receta.id !== id);
+          renderRecetas();
+        } catch (err) {
+          console.error(err);
+          alert("No se pudo eliminar la receta. Intentalo de nuevo.");
+        } finally {
+          btn.disabled = false;
+        }
       }
 
       async function subirFoto(file) {

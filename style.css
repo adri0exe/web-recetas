@@ -247,6 +247,22 @@ button,
   color: var(--muted);
 }
 
+.receta-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.danger {
+  color: #b42318;
+  border: 1px solid #f3c8c2;
+  background: #fff3f0;
+}
+
+.danger:hover {
+  background: #ffe8e3;
+}
+
 .pill {
   display: inline-block;
   background: var(--accent);
