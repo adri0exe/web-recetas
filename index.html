@@ -171,6 +171,7 @@
       attachListeners();
       await syncRecetas();
       await ensureSession();
+      formPanel.classList.add("hidden");
 
       supabase.auth.onAuthStateChange((_event, session) => {
         currentSession = session;
