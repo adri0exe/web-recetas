@@ -11,6 +11,7 @@
 <body>
   <div id="login-overlay" class="login-overlay" hidden>
     <div class="login-card">
+      <button type="button" class="ghost close-login" id="login-close" aria-label="Cerrar inicio de sesion">Cerrar</button>
       <p class="badge">Acceso privado</p>
       <h2>Inicia sesion</h2>
       <p class="muted">Solo los usuarios registrados pueden crear/editar recetas.</p>
@@ -161,6 +162,7 @@
       const loginBtn = document.getElementById("login-btn");
       const loginError = document.getElementById("login-error");
       const loginToggle = document.getElementById("login-toggle");
+      const loginClose = document.getElementById("login-close");
       const logoutBtn = document.getElementById("logout-btn");
       const favoritesToggle = document.getElementById("favorites-toggle");
       const authHint = document.getElementById("auth-hint");
@@ -189,6 +191,7 @@
         form.addEventListener("submit", handleSubmit);
         loginForm.addEventListener("submit", handleLogin);
         loginToggle.addEventListener("click", showLogin);
+        loginClose.addEventListener("click", hideLogin);
         logoutBtn.addEventListener("click", handleLogout);
         toggleFormBtn.addEventListener("click", toggleFormVisibility);
         closeLightboxBtn.addEventListener("click", hideLightbox);

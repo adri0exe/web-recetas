@@ -390,6 +390,7 @@ button,
   padding: 24px;
   box-shadow: var(--shadow);
   border: 1px solid var(--border);
+  position: relative;
 }
 
 .login-card h2 {
@@ -407,6 +408,13 @@ button,
   border: 1px solid #f3c8c2;
   padding: 10px 12px;
   border-radius: 10px;
+}
+
+.close-login {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 6px 10px;
 }
 
 .hidden {
