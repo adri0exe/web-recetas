@@ -33,6 +33,7 @@
     <div class="auth-actions">
       <button type="button" class="ghost" id="login-toggle">Iniciar sesion</button>
       <div class="auth-user" id="auth-user" hidden></div>
+      <button type="button" class="ghost" id="favorites-toggle" hidden>Ver favoritos</button>
       <button type="button" class="ghost danger" id="logout-btn" hidden>Cerrar sesion</button>
     </div>
     <h1>Recetas caseras</h1>
@@ -161,6 +162,7 @@
       const loginError = document.getElementById("login-error");
       const loginToggle = document.getElementById("login-toggle");
       const logoutBtn = document.getElementById("logout-btn");
+      const favoritesToggle = document.getElementById("favorites-toggle");
       const authHint = document.getElementById("auth-hint");
       const formPanel = document.getElementById("form-panel");
       const authUser = document.getElementById("auth-user");
@@ -171,6 +173,7 @@
       const searchInput = document.getElementById("search-receta");
       let formVisible = false;
       let searchTerm = "";
+      let showFavoritesOnly = false;
 
       attachListeners();
       await syncRecetas();
@@ -193,6 +196,7 @@
           if (e.target === lightbox) hideLightbox();
         });
         searchInput.addEventListener("input", handleSearch);
+        favoritesToggle.addEventListener("click", toggleFavorites);
 
         fotoInput.addEventListener("change", async (event) => {
           const file = event.target.files[0];
@@ -272,6 +276,8 @@
         const isLogged = Boolean(currentSession);
         loginToggle.hidden = isLogged;
         logoutBtn.hidden = !isLogged;
+        favoritesToggle.hidden = !isLogged;
+        favoritesToggle.textContent = showFavoritesOnly ? "Ver todas" : "Ver favoritos";
         if (isLogged && currentSession?.user?.email) {
           authUser.hidden = false;
           authUser.textContent = currentSession.user.email;
@@ -429,7 +435,7 @@
       function renderRecetas() {
         recetasContainer.innerHTML = "";
 
-        const filtradas = filterRecetas(recetas, searchTerm);
+        const filtradas = filterRecetas(recetas, searchTerm, showFavoritesOnly);
 
         if (!filtradas.length) {
           recetasContainer.innerHTML = '<p class="empty">No hay recetas guardadas todavia.</p>';
@@ -501,20 +507,31 @@
         renderRecetas();
       }
 
-      function filterRecetas(lista, term) {
-        if (!term) return lista;
-        return lista.filter((receta) => {
+      function filterRecetas(lista, term, soloFavoritas) {
+        let resultado = lista;
+        if (soloFavoritas) {
+          resultado = resultado.filter((receta) => Boolean(receta.favorita));
+        }
+        if (!term) return resultado;
+        const lower = term.toLowerCase();
+        return resultado.filter((receta) => {
           const titulo = (receta.titulo || "").toLowerCase();
           const resumen = (receta.resumen || "").toLowerCase();
           const ingredientes = (receta.ingredientes || []).join(" ").toLowerCase();
           const pasos = (receta.pasos || []).join(" ").toLowerCase();
           return (
-            titulo.includes(term) ||
-            resumen.includes(term) ||
-            ingredientes.includes(term) ||
-            pasos.includes(term)
+            titulo.includes(lower) ||
+            resumen.includes(lower) ||
+            ingredientes.includes(lower) ||
+            pasos.includes(lower)
           );
         });
+      }
+
+      function toggleFavorites() {
+        showFavoritesOnly = !showFavoritesOnly;
+        favoritesToggle.textContent = showFavoritesOnly ? "Ver todas" : "Ver favoritos";
+        renderRecetas();
       }
 
       function toList(text) {
