@@ -155,7 +155,7 @@
       attachListeners();
       await ensureSession();
 
-      supabase.auth.onAuthStateChange(async (_event, session) => {
+      const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
         if (session && isAllowedUser(session.user)) {
           hideLogin();
           await syncRecetas();
@@ -274,7 +274,7 @@
             await supabase.auth.signOut();
             throw new Error("Este usuario no esta autorizado para entrar.");
           }
-          hideLogin();
+          hideLogin(true);
           await syncRecetas();
         } catch (err) {
           loginError.hidden = false;
@@ -412,12 +412,14 @@
 
       function showLogin() {
         loginOverlay.hidden = false;
-        loginOverlay.style.display = "grid";
       }
 
-      function hideLogin() {
+      function hideLogin(removeOverlay = false) {
         loginOverlay.hidden = true;
         loginOverlay.style.display = "none";
+        if (removeOverlay) {
+          loginOverlay.remove();
+        }
       }
 
       async function eliminarReceta(id, btn) {

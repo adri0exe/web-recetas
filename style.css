@@ -298,6 +298,10 @@ button,
   z-index: 20;
 }
 
+.login-overlay[hidden] {
+  display: none !important;
+}
+
 .login-card {
   width: min(480px, 100%);
   background: var(--panel);
