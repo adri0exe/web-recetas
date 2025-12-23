@@ -252,16 +252,6 @@ button,
   border: 1px solid var(--border);
 }
 
-.tag {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: #eef0ff;
-  color: #3e3a7a;
-  font-weight: 700;
-  font-size: 12px;
-}
-
 .receta-title {
   margin: 6px 0;
   font-size: 1.3rem;
@@ -269,6 +259,7 @@ button,
 
 .receta-summary {
   color: var(--muted);
+  margin-top: 4px;
 }
 
 .receta-actions {
