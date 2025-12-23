@@ -138,6 +138,11 @@
       <div id="recetas" class="recetas-list">
         <p class="empty">No hay recetas guardadas todavia.</p>
       </div>
+      <div class="pagination" id="pagination" hidden>
+        <button type="button" class="ghost" id="prev-page">Anterior</button>
+        <span id="page-info"></span>
+        <button type="button" class="ghost" id="next-page">Siguiente</button>
+      </div>
     </section>
   </main>
 
@@ -212,9 +217,15 @@
       const searchInput = document.getElementById("search-receta");
       const tagInputs = Array.from(document.querySelectorAll('input[name="tags"]'));
       const categoryInputs = Array.from(document.querySelectorAll('input[name="categoria"]'));
+      const pagination = document.getElementById("pagination");
+      const prevPageBtn = document.getElementById("prev-page");
+      const nextPageBtn = document.getElementById("next-page");
+      const pageInfo = document.getElementById("page-info");
       let formVisible = false;
       let searchTerm = "";
       let showFavoritesOnly = false;
+      let currentPage = 1;
+      const pageSize = 5;
 
       attachListeners();
       await syncRecetas();
@@ -239,6 +250,8 @@
         });
         searchInput.addEventListener("input", handleSearch);
         favoritesToggle.addEventListener("click", toggleFavorites);
+        prevPageBtn.addEventListener("click", () => changePage(-1));
+        nextPageBtn.addEventListener("click", () => changePage(1));
 
         fotoInput.addEventListener("change", async (event) => {
           const file = event.target.files[0];
@@ -359,6 +372,7 @@
             .order("fecha", { ascending: false });
           if (error) throw error;
           recetas = data || [];
+          currentPage = 1;
           renderRecetas();
         } catch (err) {
           console.error("No se pudieron cargar las recetas", err);
@@ -494,10 +508,16 @@
 
         if (!filtradas.length) {
           recetasContainer.innerHTML = '<p class="empty">No hay recetas guardadas todavia.</p>';
+          pagination.hidden = true;
           return;
         }
 
-        filtradas.forEach((receta) => {
+        const totalPages = Math.max(1, Math.ceil(filtradas.length / pageSize));
+        if (currentPage > totalPages) currentPage = totalPages;
+        const start = (currentPage - 1) * pageSize;
+        const paginadas = filtradas.slice(start, start + pageSize);
+
+        paginadas.forEach((receta) => {
           const clone = template.content.cloneNode(true);
           const titleEl = clone.querySelector(".receta-title");
           const summaryEl = clone.querySelector(".receta-summary");
@@ -572,10 +592,16 @@
 
           recetasContainer.appendChild(clone);
         });
+
+        pagination.hidden = false;
+        pageInfo.textContent = `Pagina ${currentPage} de ${totalPages}`;
+        prevPageBtn.disabled = currentPage <= 1;
+        nextPageBtn.disabled = currentPage >= totalPages;
       }
 
       function handleSearch(event) {
         searchTerm = (event.target.value || "").trim().toLowerCase();
+        currentPage = 1;
         renderRecetas();
       }
 
@@ -615,6 +641,12 @@
       function toggleFavorites() {
         showFavoritesOnly = !showFavoritesOnly;
         favoritesToggle.textContent = showFavoritesOnly ? "Ver todas" : "Ver favoritos";
+        currentPage = 1;
+        renderRecetas();
+      }
+
+      function changePage(delta) {
+        currentPage = Math.max(1, currentPage + delta);
         renderRecetas();
       }
 
