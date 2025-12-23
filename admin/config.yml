@@ -1,0 +1,19 @@
+backend:
+  name: github
+  repo: TU_USUARIO/recetas-mama
+  branch: main
+
+media_folder: "images"
+public_folder: "/images"
+
+collections:
+  - name: "recetas"
+    label: "Recetas"
+    folder: "recetas"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: "Título", name: "title", widget: "string" }
+      - { label: "Foto", name: "image", widget: "image" }
+      - { label: "Ingredientes", name: "ingredients", widget: "list" }
+      - { label: "Pasos", name: "body", widget: "markdown" }
