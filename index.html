@@ -41,6 +41,10 @@
     </div>
   </header>
 
+  <div class="search-bar">
+    <input type="search" id="search-receta" placeholder="Buscar recetas por nombre, descripcion o ingredientes">
+  </div>
+
   <main class="layout">
     <section class="panel form-panel hidden" id="form-panel">
       <div class="panel-header">
@@ -164,7 +168,9 @@
       const lightbox = document.getElementById("image-lightbox");
       const lightboxImg = document.getElementById("lightbox-img");
       const closeLightboxBtn = document.getElementById("close-lightbox");
+      const searchInput = document.getElementById("search-receta");
       let formVisible = false;
+      let searchTerm = "";
 
       attachListeners();
       await syncRecetas();
@@ -186,6 +192,7 @@
         lightbox.addEventListener("click", (e) => {
           if (e.target === lightbox) hideLightbox();
         });
+        searchInput.addEventListener("input", handleSearch);
 
         fotoInput.addEventListener("change", async (event) => {
           const file = event.target.files[0];
@@ -416,12 +423,14 @@
       function renderRecetas() {
         recetasContainer.innerHTML = "";
 
-        if (!recetas.length) {
+        const filtradas = filterRecetas(recetas, searchTerm);
+
+        if (!filtradas.length) {
           recetasContainer.innerHTML = '<p class="empty">No hay recetas guardadas todavia.</p>';
           return;
         }
 
-        recetas.forEach((receta) => {
+        filtradas.forEach((receta) => {
           const clone = template.content.cloneNode(true);
           const titleEl = clone.querySelector(".receta-title");
           const summaryEl = clone.querySelector(".receta-summary");
@@ -478,6 +487,27 @@
           });
 
           recetasContainer.appendChild(clone);
+        });
+      }
+
+      function handleSearch(event) {
+        searchTerm = (event.target.value || "").trim().toLowerCase();
+        renderRecetas();
+      }
+
+      function filterRecetas(lista, term) {
+        if (!term) return lista;
+        return lista.filter((receta) => {
+          const titulo = (receta.titulo || "").toLowerCase();
+          const resumen = (receta.resumen || "").toLowerCase();
+          const ingredientes = (receta.ingredientes || []).join(" ").toLowerCase();
+          const pasos = (receta.pasos || []).join(" ").toLowerCase();
+          return (
+            titulo.includes(term) ||
+            resumen.includes(term) ||
+            ingredientes.includes(term) ||
+            pasos.includes(term)
+          );
         });
       }
 
