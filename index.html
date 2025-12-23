@@ -69,19 +69,19 @@
         </label>
 
         <div class="grid">
-          <label class="field">
+          <div class="field">
             <span>Categoria</span>
-            <select id="categoria" name="categoria">
-              <option value="">Sin categoria</option>
-              <option>Entrantes</option>
-              <option>Guisos</option>
-              <option>Postres</option>
-              <option>Rapidas</option>
-              <option>Ensaladas</option>
-              <option>Bebidas</option>
-              <option>Salsas</option>
-            </select>
-          </label>
+            <div class="category-options" id="categoria-options">
+              <label class="tag-option"><input type="radio" name="categoria" value=""> Sin categoria</label>
+              <label class="tag-option"><input type="radio" name="categoria" value="Entrantes"> Entrantes</label>
+              <label class="tag-option"><input type="radio" name="categoria" value="Guisos"> Guisos</label>
+              <label class="tag-option"><input type="radio" name="categoria" value="Postres"> Postres</label>
+              <label class="tag-option"><input type="radio" name="categoria" value="Rapidas"> Rapidas</label>
+              <label class="tag-option"><input type="radio" name="categoria" value="Ensaladas"> Ensaladas</label>
+              <label class="tag-option"><input type="radio" name="categoria" value="Bebidas"> Bebidas</label>
+              <label class="tag-option"><input type="radio" name="categoria" value="Salsas"> Salsas</label>
+            </div>
+          </div>
 
           <div class="field">
             <span>Tags</span>
@@ -210,8 +210,8 @@
       const lightboxImg = document.getElementById("lightbox-img");
       const closeLightboxBtn = document.getElementById("close-lightbox");
       const searchInput = document.getElementById("search-receta");
-      const categoriaSelect = document.getElementById("categoria");
       const tagInputs = Array.from(document.querySelectorAll('input[name="tags"]'));
+      const categoryInputs = Array.from(document.querySelectorAll('input[name="categoria"]'));
       let formVisible = false;
       let searchTerm = "";
       let showFavoritesOnly = false;
@@ -275,7 +275,10 @@
             form.resumen.value = receta.resumen || "";
             form.ingredientes.value = (receta.ingredientes || []).join("\n");
             form.pasos.value = (receta.pasos || []).join("\n");
-            categoriaSelect.value = receta.categoria || "";
+            const cat = receta.categoria || "";
+            categoryInputs.forEach((input) => {
+              input.checked = input.value === cat;
+            });
             tagInputs.forEach((input) => {
               input.checked = (receta.tags || []).includes(input.value);
             });
@@ -408,7 +411,7 @@
         const ingredientes = toList(form.ingredientes.value);
         const pasos = toList(form.pasos.value);
         const fotoFile = fotoInput.files[0] || null;
-        const categoria = categoriaSelect.value || "";
+        const categoria = (categoryInputs.find((input) => input.checked)?.value || "").trim();
         const tags = tagInputs.filter((input) => input.checked).map((input) => input.value);
 
         if (!titulo || !ingredientes.length || !pasos.length) {
@@ -588,11 +591,15 @@
           const resumen = (receta.resumen || "").toLowerCase();
           const ingredientes = (receta.ingredientes || []).join(" ").toLowerCase();
           const pasos = (receta.pasos || []).join(" ").toLowerCase();
+          const categoria = (receta.categoria || "").toLowerCase();
+          const tags = (receta.tags || []).join(" ").toLowerCase();
           return (
             titulo.includes(lower) ||
             resumen.includes(lower) ||
             ingredientes.includes(lower) ||
-            pasos.includes(lower)
+            pasos.includes(lower) ||
+            categoria.includes(lower) ||
+            tags.includes(lower)
           );
         });
       }

@@ -506,6 +506,16 @@ button,
   font-weight: 500;
 }
 
+.category-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff9f3;
+}
+
 @media (max-width: 820px) {
   body {
     padding: 16px;
