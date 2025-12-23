@@ -220,7 +220,8 @@ async function handleLogout() {
   } catch (err) {
     console.error("Error al cerrar sesion", err);
   } finally {
-    currentSession = null;
+    const { data } = await supabase.auth.getSession();
+    currentSession = data?.session || null;
     formVisible = false;
     showFavoritesOnly = false;
     searchTerm = "";
@@ -228,6 +229,7 @@ async function handleLogout() {
     formPanel.classList.add("hidden");
     toggleFormBtn.textContent = "Nueva receta";
     favoritesToggle.textContent = "Ver favoritos";
+    showLogin();
     updateAuthUI();
     renderRecetas();
   }
