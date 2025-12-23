@@ -37,6 +37,9 @@
     </div>
     <h1>Recetas caseras</h1>
     <p class="lead">Guarda tus ideas en casa o fuera, con foto, ingredientes y pasos.</p>
+    <div class="hero-actions">
+      <button type="button" class="primary" id="toggle-form" hidden>Mostrar formulario</button>
+    </div>
   </header>
 
   <main class="layout">
@@ -162,6 +165,8 @@
       const authHint = document.getElementById("auth-hint");
       const formPanel = document.getElementById("form-panel");
       const authUser = document.getElementById("auth-user");
+      const toggleFormBtn = document.getElementById("toggle-form");
+      let formVisible = false;
 
       attachListeners();
       await syncRecetas();
@@ -177,6 +182,7 @@
         loginForm.addEventListener("submit", handleLogin);
         loginToggle.addEventListener("click", showLogin);
         logoutBtn.addEventListener("click", handleLogout);
+        toggleFormBtn.addEventListener("click", toggleFormVisibility);
 
         fotoInput.addEventListener("change", async (event) => {
           const file = event.target.files[0];
@@ -269,9 +275,17 @@
         authHint.textContent = isLogged
           ? "Puedes guardar, importar y eliminar recetas."
           : "Inicia sesion para guardar recetas.";
-        formPanel.classList.toggle("hidden", !isLogged);
+        formPanel.classList.toggle("hidden", !isLogged || !formVisible);
         submitBtn.disabled = !isLogged;
+        toggleFormBtn.hidden = !isLogged;
+        toggleFormBtn.textContent = formVisible ? "Ocultar formulario" : "Mostrar formulario";
         renderRecetas();
+      }
+
+      function toggleFormVisibility() {
+        formVisible = !formVisible;
+        formPanel.classList.toggle("hidden", !formVisible);
+        toggleFormBtn.textContent = formVisible ? "Ocultar formulario" : "Mostrar formulario";
       }
 
       async function syncRecetas() {

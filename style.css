@@ -51,6 +51,10 @@ p {
   gap: 10px;
 }
 
+.hero-actions {
+  margin-top: 12px;
+}
+
 .auth-user {
   align-self: center;
   padding: 6px 10px;
