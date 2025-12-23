@@ -340,9 +340,9 @@
         logoutBtn.hidden = !isLogged;
         favoritesToggle.hidden = !isLogged;
         favoritesToggle.textContent = showFavoritesOnly ? "Ver todas" : "Ver favoritos";
-        if (isLogged && currentSession?.user?.email) {
+        if (isLogged && currentSession?.user) {
           authUser.hidden = false;
-          authUser.textContent = currentSession.user.email;
+          authUser.textContent = getDisplayName(currentSession.user);
         } else {
           authUser.hidden = true;
           authUser.textContent = "";
@@ -648,6 +648,12 @@
       function changePage(delta) {
         currentPage = Math.max(1, currentPage + delta);
         renderRecetas();
+      }
+
+      function getDisplayName(user) {
+        if (!user) return "";
+        const meta = user.user_metadata || {};
+        return meta.name || meta.nombre || (user.email ? user.email.split("@")[0] : "");
       }
 
       function toList(text) {
