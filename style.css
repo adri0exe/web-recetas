@@ -270,6 +270,20 @@ button,
   gap: 8px;
 }
 
+.star-btn {
+  min-width: 44px;
+  background: #fff7e6;
+  border: 1px solid #f5d7a7;
+  color: #b26b00;
+  font-size: 18px;
+}
+
+.star-btn.starred {
+  background: #ffedc2;
+  border-color: #f0c36a;
+  color: #b26b00;
+}
+
 .danger {
   color: #b42318;
   border: 1px solid #f3c8c2;

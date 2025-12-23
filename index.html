@@ -111,6 +111,7 @@
           <h3 class="receta-title"></h3>
           <p class="receta-summary"></p>
           <div class="receta-actions">
+            <button type="button" class="ghost star-btn" data-accion="favorita" data-id="" aria-label="Marcar como favorita">☆</button>
             <button type="button" class="ghost danger delete-btn" data-accion="eliminar" data-id="">Eliminar</button>
           </div>
         </div>
@@ -199,6 +200,19 @@
           const img = event.target.closest(".receta-img");
           if (img && img.dataset.full) {
             showLightbox(img.dataset.full, img.alt || "Foto de la receta");
+            return;
+          }
+
+          const starBtn = event.target.closest("[data-accion='favorita']");
+          if (starBtn) {
+            if (!currentSession) {
+              alert("Inicia sesion para marcar favoritas.");
+              showLogin();
+              return;
+            }
+            const id = starBtn.dataset.id;
+            if (!id) return;
+            await toggleFavorita(id, starBtn);
             return;
           }
 
@@ -330,6 +344,7 @@
             pasos,
             foto_url: fotoUrl,
             fecha: new Date().toISOString(),
+            favorita: false,
             created_by: currentSession?.user?.email || null,
           };
 
@@ -367,6 +382,7 @@
           const pasosEl = clone.querySelector(".pasos");
           const metaEl = clone.querySelector(".receta-meta");
           const deleteBtn = clone.querySelector(".delete-btn");
+          const starBtn = clone.querySelector(".star-btn");
 
           titleEl.textContent = receta.titulo;
           summaryEl.textContent = receta.resumen || "Sin descripcion";
@@ -376,6 +392,13 @@
           deleteBtn.disabled = !currentSession;
           deleteBtn.classList.toggle("hidden", !currentSession);
           deleteBtn.hidden = !currentSession;
+          starBtn.dataset.id = receta.id;
+          starBtn.disabled = !currentSession;
+          starBtn.classList.toggle("hidden", !currentSession);
+          starBtn.hidden = !currentSession;
+          const favorita = Boolean(receta.favorita);
+          starBtn.textContent = favorita ? "\u2605" : "\u2606";
+          starBtn.classList.toggle("starred", favorita);
 
           const fotoUrl = receta.foto_url || receta.foto || null;
           if (fotoUrl) {
@@ -466,6 +489,24 @@
         return publicData.publicUrl;
       }
 
+      async function toggleFavorita(id, btn) {
+        try {
+          btn.disabled = true;
+          const receta = recetas.find((r) => r.id === id);
+          const nuevaMarca = !receta?.favorita;
+          const { error } = await supabase.from("recetas").update({ favorita: nuevaMarca }).eq("id", id);
+          if (error) throw error;
+          if (receta) receta.favorita = nuevaMarca;
+          btn.textContent = nuevaMarca ? "\u2605" : "\u2606";
+          btn.classList.toggle("starred", nuevaMarca);
+        } catch (err) {
+          console.error(err);
+          alert("No se pudo actualizar favorito. Intentalo de nuevo.");
+        } finally {
+          btn.disabled = false;
+        }
+      }
+
       function showLightbox(url, alt) {
         lightboxImg.src = url;
         lightboxImg.alt = alt || "Foto de receta";
@@ -490,3 +531,4 @@
   </script>
 </body>
 </html>
+
