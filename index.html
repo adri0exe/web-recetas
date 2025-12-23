@@ -412,10 +412,12 @@
 
       function showLogin() {
         loginOverlay.hidden = false;
+        loginOverlay.style.display = "grid";
       }
 
       function hideLogin() {
         loginOverlay.hidden = true;
+        loginOverlay.style.display = "none";
       }
 
       async function eliminarReceta(id, btn) {
