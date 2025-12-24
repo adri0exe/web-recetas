@@ -93,7 +93,7 @@
               <label class="tag-option"><input type="checkbox" name="tags" value="Sin gluten"> Sin gluten</label>
               <label class="tag-option"><input type="checkbox" name="tags" value="Sin lactosa"> Sin lactosa</label>
               <label class="tag-option"><input type="checkbox" name="tags" value="Picante"> Picante</label>
-              <label class="tag-option"><input type="checkbox" name="tags" value="Para congelar"> Para congelar</label>
+              <label class="tag-option"><input type="checkbox" name="tags" value="Congelar"> Para congelar</label>
               <label class="tag-option"><input type="checkbox" name="tags" value="Microondas"> Microondas</label>
               <label class="tag-option"><input type="checkbox" name="tags" value="Light"> Light</label>
             </div>
@@ -236,6 +236,10 @@
 
       supabase.auth.onAuthStateChange(async (_event, session) => {
         currentSession = session;
+        if (!session) {
+          handleSignedOutState();
+          return;
+        }
         await refreshUserMeta();
         updateAuthUI();
       });
@@ -426,13 +430,21 @@
         } catch (err) {
           console.error("Error al cerrar sesion", err);
         } finally {
-          clearLocalSession();
-          currentSession = null;
-          formVisible = false;
-          formPanel.classList.add("hidden");
-          hideLogin();
-          updateAuthUI();
+          handleSignedOutState();
         }
+      }
+
+      function handleSignedOutState() {
+        clearLocalSession();
+        currentSession = null;
+        formVisible = false;
+        showFavoritesOnly = false;
+        searchTerm = "";
+        searchInput.value = "";
+        formPanel.classList.add("hidden");
+        toggleFormBtn.textContent = "Nueva receta";
+        hideLogin();
+        updateAuthUI();
       }
 
       async function handleSubmit(event) {
