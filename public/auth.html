@@ -1,0 +1,75 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Acceso a Recetas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="assets/img/imagen.png">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script src="https://unpkg.com/@supabase/supabase-js@2.49.1/dist/umd/supabase.js"></script>
+</head>
+<body class="auth-body">
+  <main class="auth-shell">
+    <section class="auth-hero">
+      <h1>Accede o crea tu cuenta</h1>
+      <p>Guarda tus recetas, súbelas con foto y compártelas con quien quieras. Inicia sesión para crear, editar o marcar favoritas.</p>
+      <div class="auth-actions">
+        <a class="ghost" href="index.html">Volver a recetas</a>
+      </div>
+    </section>
+
+    <section class="panel auth-card" id="login-card">
+      <p class="eyebrow">Acceso</p>
+      <h1>Inicia sesion</h1>
+      <form id="login-form" class="stack" autocomplete="off">
+        <label class="field">
+          <span>Correo</span>
+          <input type="email" id="login-email" name="login-email" required placeholder="tu-correo@ejemplo.com">
+        </label>
+        <label class="field">
+          <span>Contrasena</span>
+          <input type="password" id="login-password" name="login-password" required placeholder="********">
+        </label>
+        <div class="auth-actions-row">
+          <button type="submit" class="primary" id="login-btn">Entrar</button>
+          <button type="button" class="ghost outline" id="forgot-password">Olvide mi contrasena</button>
+        </div>
+        <p class="login-error" id="login-error" hidden></p>
+      </form>
+      <div class="auth-divider"><span>o</span></div>
+      <button type="button" class="social-btn" id="google-btn">Continuar con Google</button>
+      <p class="muted signup-link">No tienes cuenta? <button type="button" class="ghost linklike" id="to-signup">Crear cuenta</button></p>
+    </section>
+
+    <section class="panel auth-card" id="signup-card" hidden>
+      <p class="eyebrow">Registro</p>
+      <h1>Crea tu cuenta</h1>
+      <form id="signup-form" class="stack" autocomplete="off">
+        <label class="field">
+          <span>Correo</span>
+          <input type="email" id="signup-email" name="signup-email" required placeholder="tu-correo@ejemplo.com">
+        </label>
+        <label class="field">
+          <span>Contrasena</span>
+          <input type="password" id="signup-password" name="signup-password" required placeholder="********">
+        </label>
+        <label class="field">
+          <span>Nombre completo (opcional)</span>
+          <input type="text" id="signup-name" name="signup-name" placeholder="Tu nombre">
+        </label>
+        <label class="field">
+          <span>Nombre de usuario (opcional)</span>
+          <input type="text" id="signup-username" name="signup-username" placeholder="usuario123">
+        </label>
+        <button type="submit" class="primary" id="signup-btn">Crear cuenta</button>
+        <p class="login-error" id="signup-error" hidden></p>
+      </form>
+      <p class="muted">Ya tienes cuenta? <button type="button" class="ghost linklike" id="to-login">Inicia sesion</button></p>
+    </section>
+
+    <div class="auth-status" id="auth-status" hidden></div>
+  </main>
+
+  <script type="module" src="assets/js/auth.js"></script>
+</body>
+</html>

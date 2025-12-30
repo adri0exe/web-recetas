@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Recetas favoritas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="assets/img/imagen.png">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script src="https://unpkg.com/@supabase/supabase-js@2.49.1/dist/umd/supabase.js"></script>
+</head>
+<body>
+  <header class="hero">
+    <div class="auth-actions">
+      <a class="ghost back-btn" href="index.html">Volver</a>
+    </div>
+    <h1>Tus favoritas</h1>
+  </header>
+
+  <div class="search-bar">
+    <input class="search-input" type="search" id="search-receta" placeholder="Buscar recetas favoritas">
+  </div>
+
+  <main class="layout">
+    <section class="panel list-panel">
+      <div class="panel-header">
+        <div>
+          <p class="eyebrow">Recetas favoritas</p>
+        </div>
+      </div>
+      <div id="recetas" class="recetas-list">
+        <p class="empty">No hay recetas favoritas todavia.</p>
+      </div>
+      <div class="pagination" id="pagination" hidden>
+        <button type="button" class="ghost" id="prev-page">Anterior</button>
+        <span id="page-info"></span>
+        <button type="button" class="ghost" id="next-page">Siguiente</button>
+      </div>
+    </section>
+  </main>
+
+  <template id="receta-template">
+    <article class="receta">
+      <div class="receta-header">
+        <h3 class="receta-title"></h3>
+        <p class="receta-summary"></p>
+        <div class="receta-badges">
+          <span class="badge category-badge" hidden></span>
+          <div class="receta-tags"></div>
+        </div>
+        <div class="receta-actions">
+          <button type="button" class="ghost star-btn" data-accion="favorita" data-id="" aria-label="Marcar como favorita">☆</button>
+          <button type="button" class="ghost edit-btn" data-accion="editar" data-id="">Editar</button>
+          <button type="button" class="ghost danger delete-btn" data-accion="eliminar" data-id="">Eliminar</button>
+        </div>
+      </div>
+      <div class="receta-media">
+        <img class="receta-img" alt="">
+      </div>
+      <div class="receta-body">
+        <div class="pill">Ingredientes</div>
+        <ul class="receta-list ingredientes"></ul>
+        <div class="pill">Pasos</div>
+        <ol class="receta-list pasos"></ol>
+      </div>
+      <div class="receta-meta">
+        <span class="receta-meta-text"></span>
+      </div>
+    </article>
+  </template>
+
+  <div id="image-lightbox" class="image-lightbox hidden">
+    <button type="button" id="close-lightbox">Cerrar</button>
+    <img id="lightbox-img" alt="Foto de receta ampliada">
+  </div>
+
+  <div class="confirm-overlay" id="confirm-overlay">
+    <div class="confirm-modal">
+      <p id="confirm-message">¿Eliminar de favoritos?</p>
+      <div class="confirm-actions">
+        <button type="button" class="ghost" id="confirm-cancel">Cancelar</button>
+        <button type="button" class="ghost danger" id="confirm-accept">Eliminar</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="assets/js/favorites.js"></script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Resultados de búsqueda</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="assets/img/imagen.png">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script src="https://unpkg.com/@supabase/supabase-js@2.49.1/dist/umd/supabase.js"></script>
+</head>
+<body class="page-search">
+  <div class="results-shell">
+    <div class="results-card">
+      <div class="back-row">
+        <a class="ghost back-btn" href="index.html">Volver</a>
+      </div>
+      <div>
+        <p class="eyebrow">Resultados</p>
+        <h1 id="results-title"></h1>
+      </div>
+      <div id="search-results" class="results-list">
+        <p class="muted">Cargando resultados...</p>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="assets/js/search.js"></script>
+</body>
+</html>

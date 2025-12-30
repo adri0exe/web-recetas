@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Nueva receta</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Crea una nueva receta">
+  <link rel="icon" type="image/png" href="assets/img/imagen.png">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script src="https://unpkg.com/@supabase/supabase-js@2.49.1/dist/umd/supabase.js"></script>
+</head>
+<body>
+  <header class="hero">
+    <div class="auth-actions">
+      <a class="ghost back-btn" href="index.html">Volver</a>
+    </div>
+    <h1>Nueva receta</h1>
+  </header>
+
+  <main class="layout">
+    <section class="panel form-panel" id="form-panel">
+      <div class="panel-header">
+        <div>
+          <p class="eyebrow">Añade una receta</p>
+          <h2>Desde tu ordenador o tu móvil</h2>
+        </div>
+      </div>
+
+      <form id="recipe-form" class="stack" autocomplete="off">
+        <label class="field">
+          <span>Nombre de la receta *</span>
+          <input id="titulo" name="titulo" type="text" required placeholder="Ej: Tarta de manzana">
+        </label>
+
+        <label class="field">
+          <span>Descripción breve</span>
+          <input id="resumen" name="resumen" type="text" maxlength="180" placeholder="Por qué es especial o para quién">
+        </label>
+
+        <div class="grid">
+          <div class="field">
+            <span>Categoría</span>
+            <div class="category-options" id="categoria-options">
+              <label class="tag-option"><input type="radio" name="categoria" value=""> Sin categoría</label>
+              <label class="tag-option"><input type="radio" name="categoria" value="Entrantes"> Entrantes</label>
+              <label class="tag-option"><input type="radio" name="categoria" value="Primeros"> Primeros</label>
+              <label class="tag-option"><input type="radio" name="categoria" value="Acompañante"> Acompañante</label>
+              <label class="tag-option"><input type="radio" name="categoria" value="Guisos"> Guisos</label>
+              <label class="tag-option"><input type="radio" name="categoria" value="Postres"> Postres</label>
+              <label class="tag-option"><input type="radio" name="categoria" value="Rápidas"> Rápidas</label>
+              <label class="tag-option"><input type="radio" name="categoria" value="Bebidas"> Bebidas</label>
+              <label class="tag-option"><input type="radio" name="categoria" value="Salsas"> Salsas</label>
+            </div>
+          </div>
+
+          <div class="field">
+            <span>Tags</span>
+            <div class="tags-grid" id="tags-options">
+              <label class="tag-option"><input type="checkbox" name="tags" value="Vegetariano"> Vegetariano</label>
+              <label class="tag-option"><input type="checkbox" name="tags" value="Vegano"> Vegano</label>
+              <label class="tag-option"><input type="checkbox" name="tags" value="Sin gluten"> Sin gluten</label>
+              <label class="tag-option"><input type="checkbox" name="tags" value="Sin lactosa"> Sin lactosa</label>
+              <label class="tag-option"><input type="checkbox" name="tags" value="Picante"> Picante</label>
+              <label class="tag-option"><input type="checkbox" name="tags" value="Congelar"> Para congelar</label>
+              <label class="tag-option"><input type="checkbox" name="tags" value="Microondas"> Microondas</label>
+              <label class="tag-option"><input type="checkbox" name="tags" value="Light"> Light</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid">
+          <label class="field">
+            <span>Ingredientes (uno por línea) *</span>
+            <textarea id="ingredientes" name="ingredientes" rows="5" required placeholder="3 manzanas&#10;200 g harina&#10;1 huevo"></textarea>
+          </label>
+
+          <label class="field">
+            <span>Pasos *</span>
+            <textarea id="pasos" name="pasos" rows="5" required placeholder="1. Preparar la base&#10;2. Hornear 35 min"></textarea>
+          </label>
+        </div>
+
+        <div class="grid">
+          <label class="field">
+            <span>Foto (opcional)</span>
+            <input id="foto" name="foto" type="file" accept="image/*" capture="environment">
+            <small class="muted">Puedes hacer la foto desde el móvil o elegir una existente.</small>
+          </label>
+
+          <div class="preview" id="preview">
+            <p class="muted">Previsualización</p>
+            <img id="preview-img" alt="Previsualización de la receta" hidden>
+          </div>
+        </div>
+
+        <button type="submit" class="primary" id="submit-btn">Guardar receta</button>
+        <p class="muted" id="auth-hint">Inicia sesión para guardar recetas.</p>
+      </form>
+    </section>
+  </main>
+
+  <script type="module" src="assets/js/create.js"></script>
+</body>
+</html>

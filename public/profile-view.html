@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Perfil público</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="assets/img/imagen.png">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script src="https://unpkg.com/@supabase/supabase-js@2.49.1/dist/umd/supabase.js"></script>
+</head>
+<body class="page-profile-view">
+  <div class="profile-shell">
+    <div class="profile-card">
+      <div class="back-row">
+        <a class="ghost back-btn" href="index.html">Volver</a>
+      </div>
+      <div class="profile-header">
+        <img id="public-avatar" class="profile-avatar" alt="Avatar">
+        <div>
+          <h1 id="public-username"></h1>
+          <p id="public-name" class="muted"></p>
+          <p id="public-bio"></p>
+        </div>
+      </div>
+      <div>
+        <p class="eyebrow">Recetas publicadas</p>
+        <div id="public-recipes" class="recipes-list">
+          <p class="muted">Cargando recetas...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="assets/js/profile-view.js"></script>
+</body>
+</html>

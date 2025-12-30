@@ -1,0 +1,143 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Recetas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Sube y guarda tus recetas con fotos desde ordenador o movil.">
+  <link rel="icon" type="image/png" href="assets/img/imagen.png">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script src="https://unpkg.com/@supabase/supabase-js@2.49.1/dist/umd/supabase.js"></script>
+</head>
+<body>
+  <header class="hero">
+    <div class="auth-actions">
+      <button type="button" class="ghost danger" id="login-toggle">Iniciar sesion</button>
+      <div class="user-menu-wrap" id="user-menu-wrap">
+        <button type="button" class="ghost user-chip" id="user-menu-toggle">
+          <img id="auth-avatar" class="user-avatar" alt="Avatar">
+          <span class="auth-user-name" id="auth-user"></span>
+          <span aria-hidden="true">▾</span>
+        </button>
+        <div class="user-menu" id="user-menu">
+          <button type="button" class="ghost" id="toggle-form" hidden>Nueva receta</button>
+          <button type="button" class="ghost" id="my-recipes-btn">Mis recetas</button>
+          <button type="button" class="ghost" id="favorites-btn">Favoritas</button>
+          <button type="button" class="ghost" id="profile-btn">Perfil</button>
+          <button type="button" class="ghost danger" id="logout-btn">Cerrar sesion</button>
+        </div>
+      </div>
+    </div>
+    <h1>Recetas caseras</h1>
+    <div class="hero-actions"></div>
+  </header>
+
+  <form class="search-bar" id="search-form">
+    <input class="search-input" name="q" type="search" id="search-receta" placeholder="Buscar recetas por nombre, descripcion o ingredientes">
+    <select id="sort-select" class="sort-select">
+      <option value="" selected disabled>Ordenar por</option>
+      <option value="newest" data-label="Mas recientes">Mas recientes</option>
+      <option value="oldest" data-label="Mas antiguas">Mas antiguas</option>
+      <option value="favorites" data-label="Mejor valoradas">Mejor valoradas</option>
+    </select>
+    <button type="button" class="ghost" id="toggle-filters">Filtros</button>
+  </form>
+
+  <section class="filters-panel hidden" id="filters-panel">
+    <div class="filters-group">
+      <p class="eyebrow">Categorias</p>
+      <div class="filters-grid">
+        <label class="tag-option"><input type="checkbox" name="filter-categoria" value="Entrantes"> Entrantes</label>
+        <label class="tag-option"><input type="checkbox" name="filter-categoria" value="Primeros"> Primeros</label>
+        <label class="tag-option"><input type="checkbox" name="filter-categoria" value="Acompañante"> Acompañante</label>
+        <label class="tag-option"><input type="checkbox" name="filter-categoria" value="Guisos"> Guisos</label>
+        <label class="tag-option"><input type="checkbox" name="filter-categoria" value="Postres"> Postres</label>
+        <label class="tag-option"><input type="checkbox" name="filter-categoria" value="Rapidas"> Rapidas</label>
+        <label class="tag-option"><input type="checkbox" name="filter-categoria" value="Bebidas"> Bebidas</label>
+        <label class="tag-option"><input type="checkbox" name="filter-categoria" value="Salsas"> Salsas</label>
+      </div>
+    </div>
+    <div class="filters-group">
+      <p class="eyebrow">Tags</p>
+      <div class="filters-grid">
+        <label class="tag-option"><input type="checkbox" name="filter-tag" value="Vegetariano"> Vegetariano</label>
+        <label class="tag-option"><input type="checkbox" name="filter-tag" value="Vegano"> Vegano</label>
+        <label class="tag-option"><input type="checkbox" name="filter-tag" value="Sin gluten"> Sin gluten</label>
+        <label class="tag-option"><input type="checkbox" name="filter-tag" value="Sin lactosa"> Sin lactosa</label>
+        <label class="tag-option"><input type="checkbox" name="filter-tag" value="Picante"> Picante</label>
+        <label class="tag-option"><input type="checkbox" name="filter-tag" value="Congelar"> Para congelar</label>
+        <label class="tag-option"><input type="checkbox" name="filter-tag" value="Microondas"> Microondas</label>
+        <label class="tag-option"><input type="checkbox" name="filter-tag" value="Light"> Light</label>
+      </div>
+    </div>
+    <div class="filters-actions">
+      <button type="button" class="ghost" id="clear-filters">Limpiar filtros</button>
+    </div>
+  </section>
+
+  <main class="layout">
+    <section class="panel list-panel">
+      <div class="panel-header">
+        <div>
+          <p class="eyebrow">Recetas publicadas</p>
+        </div>
+      </div>
+      <div id="recetas" class="recetas-list">
+        <p class="empty">No hay recetas guardadas todavia.</p>
+      </div>
+      <div class="pagination" id="pagination" hidden>
+        <button type="button" class="ghost" id="prev-page">Anterior</button>
+        <span id="page-info"></span>
+        <button type="button" class="ghost" id="next-page">Siguiente</button>
+      </div>
+    </section>
+  </main>
+
+  <template id="receta-template">
+    <article class="receta">
+      <div class="receta-header">
+        <h3 class="receta-title"></h3>
+        <p class="receta-summary"></p>
+        <div class="receta-badges">
+          <span class="badge category-badge" hidden></span>
+          <div class="receta-tags"></div>
+        </div>
+        <div class="receta-actions">
+          <button type="button" class="ghost star-btn" data-accion="favorita" data-id="" aria-label="Marcar como favorita">â˜†</button>
+          <button type="button" class="ghost edit-btn" data-accion="editar" data-id="">Editar</button>
+          <button type="button" class="ghost danger delete-btn" data-accion="eliminar" data-id="">Eliminar</button>
+        </div>
+      </div>
+      <div class="receta-media">
+        <img class="receta-img" alt="">
+      </div>
+      <div class="receta-body">
+        <div class="pill">Ingredientes</div>
+        <ul class="receta-list ingredientes"></ul>
+        <div class="pill">Pasos</div>
+        <ol class="receta-list pasos"></ol>
+      </div>
+      <div class="receta-meta">
+        <span class="receta-meta-text"></span>
+      </div>
+    </article>
+  </template>
+
+  <div id="image-lightbox" class="image-lightbox hidden">
+    <button type="button" id="close-lightbox">Cerrar</button>
+    <img id="lightbox-img" alt="Foto de receta ampliada">
+  </div>
+
+  <div class="confirm-overlay" id="confirm-overlay">
+    <div class="confirm-modal">
+      <p id="confirm-message">¿Seguro que quieres continuar?</p>
+      <div class="confirm-actions">
+        <button type="button" class="ghost" id="confirm-cancel">Cancelar</button>
+        <button type="button" class="ghost danger" id="confirm-accept">Eliminar</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="assets/js/app.js"></script>
+</body>
+</html>

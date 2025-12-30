@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Receta</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="assets/img/imagen.png">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script src="https://unpkg.com/@supabase/supabase-js@2.49.1/dist/umd/supabase.js"></script>
+</head>
+<body class="page-recipe-view">
+  <div class="recipe-view-shell">
+    <div class="recipe-view-card">
+      <div class="back-row">
+        <a class="ghost back-btn" href="javascript:history.back()">Volver</a>
+      </div>
+      <div class="recipe-head">
+        <p class="eyebrow" id="recipe-date">Receta</p>
+        <h1 id="recipe-title"></h1>
+        <p id="recipe-summary" class="muted"></p>
+        <div class="meta" id="recipe-meta"></div>
+      </div>
+      <img id="recipe-image" class="recipe-image" alt="Foto de la receta" hidden>
+      <div class="receta-badges">
+        <span class="badge category-badge" id="recipe-category" hidden></span>
+        <div class="receta-tags" id="recipe-tags"></div>
+      </div>
+      <div class="section">
+        <div class="pill">Ingredientes</div>
+        <div class="content-box">
+          <ul id="recipe-ingredients" class="receta-list"></ul>
+        </div>
+      </div>
+      <div class="section">
+        <div class="pill">Pasos</div>
+        <div class="content-box">
+          <ol id="recipe-steps" class="receta-list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="assets/js/recipe-view.js"></script>
+</body>
+</html>

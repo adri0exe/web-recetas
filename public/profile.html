@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Perfil</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="assets/img/imagen.png">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script src="https://unpkg.com/@supabase/supabase-js@2.49.1/dist/umd/supabase.js"></script>
+</head>
+<body class="page-profile">
+  <div class="profile-shell">
+    <div class="profile-card">
+      <div class="profile-header">
+        <div>
+          <p class="eyebrow">Perfil</p>
+          <h1>Tu informacion</h1>
+        </div>
+        <div class="profile-actions">
+          <a class="ghost back-btn" href="index.html">Volver</a>
+          <button type="button" class="ghost danger" id="logout-btn">Cerrar sesion</button>
+        </div>
+      </div>
+
+      <form id="profile-form" class="stack" autocomplete="off">
+        <div class="profile-grid">
+          <div class="stack">
+            <label class="field">
+              <span>Nombre de usuario</span>
+              <input type="text" id="username" name="username" placeholder="tuusuario" required>
+            </label>
+            <label class="field">
+              <span>Nombre completo</span>
+              <input type="text" id="full_name" name="full_name" placeholder="Tu nombre">
+            </label>
+            <label class="field">
+              <span>Bio</span>
+              <textarea id="bio" name="bio" rows="3" placeholder="Cuentanos algo sobre ti"></textarea>
+            </label>
+          </div>
+          <div class="avatar-box">
+            <img id="avatar-img" class="avatar-preview" alt="Tu avatar">
+            <div class="drop-area" id="avatar-drop">
+              <p class="muted">Arrastra una imagen o haz clic para seleccionarla</p>
+              <button type="button" class="ghost" id="avatar-upload-btn">Elegir foto</button>
+              <input type="file" id="avatar-file" class="hidden-file" accept="image/*">
+            </div>
+            <p class="muted">Si no subes foto, generamos una por defecto.</p>
+          </div>
+        </div>
+        <button type="submit" class="primary" id="save-btn">Guardar cambios</button>
+      </form>
+
+      <div class="status" id="profile-status" hidden></div>
+    </div>
+  </div>
+
+  <script type="module" src="assets/js/profile.js"></script>
+</body>
+</html>
