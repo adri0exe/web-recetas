@@ -36,10 +36,10 @@ h1, h2, h3 {
 
 .watermark {
   position: fixed;
-  transform: translateX(-50%);
-  bottom: 15px;
-  left: 50%;
-  right: auto;
+  left: 0;
+  right: 0;
+  bottom: 12px;
+  text-align: center;
   font-size: 14px;
   color: rgba(0, 0, 0, 0.25);
   font-family: Arial, sans-serif;
@@ -1267,5 +1267,6 @@ button,
     gap: 6px;
   }
 }
+
 
 
