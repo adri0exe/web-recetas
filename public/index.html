@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -17,7 +17,7 @@
         <button type="button" class="ghost user-chip" id="user-menu-toggle">
           <img id="auth-avatar" class="user-avatar" alt="Avatar">
           <span class="auth-user-name" id="auth-user"></span>
-          <span aria-hidden="true">▾</span>
+          <span aria-hidden="true">?</span>
         </button>
         <div class="user-menu" id="user-menu">
           <button type="button" class="ghost" id="toggle-form" hidden>Nueva receta</button>
@@ -31,12 +31,7 @@
     <h1>Recetas caseras</h1>
     <div class="hero-actions"></div>
   </header>
-
-  <div class="watermark">
-  © AdrianLM
-  </div>
-
-  <form class="search-bar" id="search-form">
+<form class="search-bar" id="search-form">
     <input class="search-input" name="q" type="search" id="search-receta" placeholder="Buscar recetas por nombre, descripcion o ingredientes">
     <select id="sort-select" class="sort-select">
       <option value="" selected disabled>Ordenar por</option>
@@ -53,7 +48,7 @@
       <div class="filters-grid">
         <label class="tag-option"><input type="checkbox" name="filter-categoria" value="Entrantes"> Entrantes</label>
         <label class="tag-option"><input type="checkbox" name="filter-categoria" value="Primeros"> Primeros</label>
-        <label class="tag-option"><input type="checkbox" name="filter-categoria" value="Acompañante"> Acompañante</label>
+        <label class="tag-option"><input type="checkbox" name="filter-categoria" value="Acompa�ante"> Acompa�ante</label>
         <label class="tag-option"><input type="checkbox" name="filter-categoria" value="Guisos"> Guisos</label>
         <label class="tag-option"><input type="checkbox" name="filter-categoria" value="Postres"> Postres</label>
         <label class="tag-option"><input type="checkbox" name="filter-categoria" value="Rapidas"> Rapidas</label>
@@ -107,7 +102,7 @@
           <div class="receta-tags"></div>
         </div>
         <div class="receta-actions">
-          <button type="button" class="ghost star-btn" data-accion="favorita" data-id="" aria-label="Marcar como favorita">â˜†</button>
+          <button type="button" class="ghost star-btn" data-accion="favorita" data-id="" aria-label="Marcar como favorita">☆</button>
           <button type="button" class="ghost edit-btn" data-accion="editar" data-id="">Editar</button>
           <button type="button" class="ghost danger delete-btn" data-accion="eliminar" data-id="">Eliminar</button>
         </div>
@@ -134,7 +129,7 @@
 
   <div class="confirm-overlay" id="confirm-overlay">
     <div class="confirm-modal">
-      <p id="confirm-message">¿Seguro que quieres continuar?</p>
+      <p id="confirm-message">�Seguro que quieres continuar?</p>
       <div class="confirm-actions">
         <button type="button" class="ghost" id="confirm-cancel">Cancelar</button>
         <button type="button" class="ghost danger" id="confirm-accept">Eliminar</button>
@@ -143,6 +138,10 @@
   </div>
 
   <script type="module" src="assets/js/app.js"></script>
+  <div class="watermark">
+    AdriLM
+  </div>
+
 </body>
 </html>
 
@@ -154,5 +153,6 @@
 =====================================
 -->
 
-<!-- Developed with ❤️ by AdrianLM -->
+<!-- Developed with ?? by AdrianLM -->
+
 

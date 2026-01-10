@@ -36,8 +36,9 @@ h1, h2, h3 {
 
 .watermark {
   position: fixed;
+  transform: translateX(-50%);
   bottom: 15px;
-  left: 15px;
+  left: 50%;
   right: auto;
   font-size: 14px;
   color: rgba(0, 0, 0, 0.25);
@@ -509,6 +510,7 @@ button,
 
 .login-overlay {
   position: fixed;
+  transform: translateX(-50%);
   inset: 0;
   background: rgba(35, 31, 29, 0.38);
   backdrop-filter: blur(6px);
@@ -571,6 +573,7 @@ button,
 
 .image-lightbox {
   position: fixed;
+  transform: translateX(-50%);
   inset: 0;
   background: rgba(0, 0, 0, 0.75);
   display: grid;
@@ -717,6 +720,7 @@ button,
 
 .confirm-overlay {
   position: fixed;
+  transform: translateX(-50%);
   inset: 0;
   background: rgba(15, 23, 42, 0.45);
   display: none;
@@ -1263,4 +1267,5 @@ button,
     gap: 6px;
   }
 }
+
 
