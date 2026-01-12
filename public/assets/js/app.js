@@ -135,8 +135,8 @@ import { STORAGE_BUCKET, SUPABASE_URL } from "./config.js";
         if (!id) return;
         const esFavorita = favoriteIds.has(id);
         const ok = await showConfirmModal(
-          esFavorita ? "Eliminar de favoritos?" : "Anadir a favoritos?",
-          esFavorita ? "Eliminar" : "Anadir"
+          esFavorita ? "\u00bfEliminar de favoritos?" : "\u00bfA\u00f1adir a favoritos?",
+          esFavorita ? "Eliminar" : "A\u00f1adir"
         );
         if (!ok) return;
         await toggleFavorita(id, starBtn);
@@ -157,7 +157,7 @@ import { STORAGE_BUCKET, SUPABASE_URL } from "./config.js";
             alert("Solo el autor o un admin puede eliminar esta receta.");
             return;
           }
-          const confirmar = await showConfirmModal("Eliminar esta receta?");
+          const confirmar = await showConfirmModal("\u00bfEliminar esta receta?");
           if (!confirmar) return;
           await eliminarReceta(id, btn);
         });
@@ -237,7 +237,7 @@ import { STORAGE_BUCKET, SUPABASE_URL } from "./config.js";
     try {
       await supabase.auth.signOut();
     } catch (err) {
-      console.error("Error al cerrar sesi??n", err);
+      console.error("Error al cerrar sesi\u00f3n", err);
     } finally {
       window.location.href = window.location.href;
     }
@@ -538,7 +538,7 @@ import { STORAGE_BUCKET, SUPABASE_URL } from "./config.js";
         resolve(fallback);
         return;
       }
-      confirmMessage.textContent = message || "Seguro que quieres continuar?";
+      confirmMessage.textContent = message || "\u00bfSeguro que quieres continuar?";
       confirmAccept.textContent = acceptLabel || "Aceptar";
       confirmOverlay.style.display = "flex";
 
@@ -830,3 +830,6 @@ import { STORAGE_BUCKET, SUPABASE_URL } from "./config.js";
   }
 
 })();
+
+
+
