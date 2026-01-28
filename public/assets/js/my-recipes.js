@@ -1,22 +1,16 @@
-import { supabase } from "./supabaseClient.js";
+﻿import { supabase } from "./supabaseClient.js";
 
 const recetasContainer = document.getElementById("recetas");
 const template = document.getElementById("receta-template");
-const lightbox = document.getElementById("image-lightbox");
-const lightboxImg = document.getElementById("lightbox-img");
-const closeLightboxBtn = document.getElementById("close-lightbox");
 const searchInput = document.getElementById("search-receta");
 const pagination = document.getElementById("pagination");
 const prevPageBtn = document.getElementById("prev-page");
 const nextPageBtn = document.getElementById("next-page");
 const pageInfo = document.getElementById("page-info");
-const confirmOverlay = document.getElementById("confirm-overlay");
-const confirmMessage = document.getElementById("confirm-message");
-const confirmCancel = document.getElementById("confirm-cancel");
-const confirmAccept = document.getElementById("confirm-accept");
 
 let recetas = [];
 let currentSession = null;
+let isAdmin = false;
 let searchTerm = "";
 let currentPage = 1;
 const pageSize = 5;
@@ -26,41 +20,30 @@ init();
 async function init() {
   attachListeners();
   await ensureSession();
+  await loadUserRole();
   await syncRecetas();
 }
 
 function attachListeners() {
-  closeLightboxBtn.addEventListener("click", hideLightbox);
-  lightbox.addEventListener("click", (e) => {
-    if (e.target === lightbox) hideLightbox();
-  });
   searchInput.addEventListener("input", handleSearch);
   prevPageBtn.addEventListener("click", () => changePage(-1));
   nextPageBtn.addEventListener("click", () => changePage(1));
 
   recetasContainer.addEventListener("click", async (event) => {
-    const img = event.target.closest(".receta-img");
-    if (img && img.dataset.full) {
-      showLightbox(img.dataset.full, img.alt || "Foto de la receta");
+    const featuredBtn = event.target.closest("[data-accion='destacada']");
+    if (featuredBtn) {
+      if (!isAdmin) return;
+      const id = featuredBtn.dataset.id;
+      if (!id) return;
+      await toggleDestacada(id, featuredBtn);
       return;
     }
 
-    const editBtn = event.target.closest("[data-accion='editar']");
-    if (editBtn) {
-      const id = editBtn.dataset.id;
-      if (!id) return;
-      window.location.href = `create.html?id=${encodeURIComponent(id)}`;
-      return;
-    }
-
-    const deleteBtn = event.target.closest("[data-accion='eliminar']");
-    if (deleteBtn) {
-      const id = deleteBtn.dataset.id;
-      if (!id) return;
-      const confirmar = await showConfirmModal("Eliminar esta receta?", "Eliminar");
-      if (!confirmar) return;
-      await eliminarReceta(id, deleteBtn);
-    }
+    const card = event.target.closest(".receta");
+    if (!card || event.target.closest("button") || event.target.closest("a")) return;
+    const id = card.dataset.id;
+    if (!id) return;
+    window.location.href = `recipe-view.html?id=${encodeURIComponent(id)}`;
   });
 }
 
@@ -97,7 +80,7 @@ async function syncRecetas() {
   } catch (err) {
     console.error("No se pudieron cargar tus recetas", err);
     recetasContainer.innerHTML =
-      '<p class="empty">No se pudieron cargar tus recetas. Comprueba tu conexion.</p>';
+      '<p class="empty">No se pudieron cargar tus recetas. Comprueba tu conexi\u00f3n.</p>';
   }
 }
 
@@ -107,7 +90,7 @@ function renderRecetas() {
   const filtradas = filterRecetas(recetas, searchTerm);
 
   if (!filtradas.length) {
-    recetasContainer.innerHTML = '<p class="empty">No has publicado recetas todavia.</p>';
+    recetasContainer.innerHTML = '<p class="empty">No has publicado recetas todav\u00eda.</p>';
     pagination.hidden = true;
     return;
   }
@@ -120,17 +103,13 @@ function renderRecetas() {
   paginadas.forEach((receta) => {
     const clone = template.content.cloneNode(true);
     const titleEl = clone.querySelector(".receta-title");
-    const summaryEl = clone.querySelector(".receta-summary");
     const imgEl = clone.querySelector(".receta-img");
-    const ingredientesEl = clone.querySelector(".ingredientes");
-    const pasosEl = clone.querySelector(".pasos");
     const metaEl = clone.querySelector(".receta-meta-text");
     const starBtn = clone.querySelector(".star-btn");
-    const editBtn = clone.querySelector(".edit-btn");
-    const deleteBtn = clone.querySelector(".delete-btn");
+    const featuredBtn = clone.querySelector(".featured-toggle");
+    const card = clone.querySelector(".receta");
 
     titleEl.textContent = receta.titulo;
-    summaryEl.textContent = receta.resumen || "Sin descripcion";
     metaEl.textContent = `${formatFecha(receta.fecha)} - `;
     if (receta.user_id) {
       const link = document.createElement("a");
@@ -142,60 +121,33 @@ function renderRecetas() {
       metaEl.appendChild(document.createTextNode(displayAuthor(receta)));
     }
 
-    // No se gestionan favoritos en esta pantalla
-    starBtn.classList.add("hidden");
-    starBtn.hidden = true;
-    starBtn.disabled = true;
+    if (starBtn) {
+      starBtn.textContent = "\u2606";
+      starBtn.disabled = true;
+    }
 
-    editBtn.dataset.id = receta.id;
-    deleteBtn.dataset.id = receta.id;
+    if (featuredBtn) {
+      featuredBtn.dataset.id = receta.id;
+      featuredBtn.hidden = !isAdmin;
+      featuredBtn.classList.toggle("hidden", !isAdmin);
+      setFeaturedButtonState(featuredBtn, Boolean(receta.destacada));
+    }
+    if (card) card.dataset.id = receta.id;
 
     const fotoUrl = receta.foto_url || receta.foto || null;
     if (fotoUrl) {
       imgEl.src = fotoUrl;
       imgEl.alt = `Foto de ${receta.titulo}`;
-      imgEl.dataset.full = fotoUrl;
       imgEl.hidden = false;
     } else {
       imgEl.hidden = true;
     }
 
-    ingredientesEl.innerHTML = "";
-    (receta.ingredientes || []).forEach((item) => {
-      const li = document.createElement("li");
-      li.textContent = item;
-      ingredientesEl.appendChild(li);
-    });
-
-    pasosEl.innerHTML = "";
-    (receta.pasos || []).forEach((item) => {
-      const li = document.createElement("li");
-      li.textContent = item;
-      pasosEl.appendChild(li);
-    });
-
-    const categoriaBadge = clone.querySelector(".category-badge");
-    if (receta.categoria) {
-      categoriaBadge.textContent = receta.categoria;
-      categoriaBadge.hidden = false;
-    } else {
-      categoriaBadge.hidden = true;
-    }
-
-    const tagsWrap = clone.querySelector(".receta-tags");
-    tagsWrap.innerHTML = "";
-    (receta.tags || []).forEach((tag) => {
-      const chip = document.createElement("span");
-      chip.className = "tag-chip";
-      chip.textContent = tag;
-      tagsWrap.appendChild(chip);
-    });
-
     recetasContainer.appendChild(clone);
   });
 
   pagination.hidden = false;
-  pageInfo.textContent = `Pagina ${currentPage} de ${totalPages}`;
+  pageInfo.textContent = `P\u00e1gina ${currentPage} de ${totalPages}`;
   prevPageBtn.disabled = currentPage <= 1;
   nextPageBtn.disabled = currentPage >= totalPages;
 }
@@ -249,55 +201,25 @@ function scrollToRecetasTop() {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-async function eliminarReceta(id, btn) {
+async function toggleDestacada(id, btn) {
   try {
     btn.disabled = true;
-    const { error } = await supabase
-      .from("recetas")
-      .delete()
-      .eq("id", id)
-      .eq("user_id", currentSession.user.id);
+    const receta = recetas.find((r) => r.id === id);
+    const nextValue = !receta?.destacada;
+    const { error } = await supabase.from("recetas").update({ destacada: nextValue }).eq("id", id);
     if (error) throw error;
-    recetas = recetas.filter((receta) => receta.id !== id);
-    renderRecetas();
+    if (receta) receta.destacada = nextValue;
+    setFeaturedButtonState(btn, nextValue);
   } catch (err) {
     console.error(err);
-    alert("No se pudo eliminar la receta. Intentalo de nuevo.");
+    alert("No se pudo actualizar destacada. Intentalo de nuevo.");
   } finally {
     btn.disabled = false;
   }
 }
 
-function showConfirmModal(message, acceptLabel = "Aceptar") {
-  return new Promise((resolve) => {
-    if (!confirmOverlay || !confirmMessage || !confirmCancel || !confirmAccept) {
-      const fallback = window.confirm(message || "");
-      resolve(fallback);
-      return;
-    }
-    confirmMessage.textContent = message || "Eliminar esta receta?";
-    confirmAccept.textContent = acceptLabel || "Aceptar";
-    confirmOverlay.style.display = "flex";
 
-    const cleanup = () => {
-      confirmOverlay.style.display = "none";
-      confirmCancel.removeEventListener("click", onCancel);
-      confirmAccept.removeEventListener("click", onAccept);
-    };
 
-    const onCancel = () => {
-      cleanup();
-      resolve(false);
-    };
-    const onAccept = () => {
-      cleanup();
-      resolve(true);
-    };
-
-    confirmCancel.addEventListener("click", onCancel, { once: true });
-    confirmAccept.addEventListener("click", onAccept, { once: true });
-  });
-}
 
 function displayAuthor(receta) {
   const p = receta?.profiles;
@@ -316,14 +238,44 @@ function formatFecha(fecha) {
   }).format(date);
 }
 
-function showLightbox(url, alt) {
-  lightboxImg.src = url;
-  lightboxImg.alt = alt || "Foto de receta";
-  lightbox.classList.remove("hidden");
+async function loadUserRole() {
+  try {
+    const role = await getMyRole();
+    isAdmin = role === "admin";
+  } catch (err) {
+    console.warn("No se pudo cargar el rol del usuario", err);
+    isAdmin = false;
+  }
 }
 
-function hideLightbox() {
-  lightbox.classList.add("hidden");
-  lightboxImg.removeAttribute("src");
-  lightboxImg.removeAttribute("alt");
+async function getMyRole() {
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData?.user;
+  if (!user) return null;
+
+  const { data, error } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (error) {
+    console.warn("No se pudo cargar el rol:", error);
+    return null;
+  }
+  return data?.role ?? null;
 }
+
+function setFeaturedButtonState(btn, isFeatured) {
+  if (!btn) return;
+  btn.textContent = isFeatured ? "Quitar destacada" : "Destacar";
+  btn.classList.toggle("is-featured", isFeatured);
+  btn.setAttribute("aria-pressed", isFeatured ? "true" : "false");
+}
+
+
+
+
+
+
+

@@ -4,21 +4,59 @@
   <meta charset="UTF-8">
   <title>Perfil</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>
+    (function () {
+      try {
+        var raw = localStorage.getItem("recetas-preferences");
+        if (!raw) return;
+        var prefs = JSON.parse(raw);
+        var theme = prefs.theme || "auto";
+        var density = prefs.density || "comoda";
+        var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+        var useDark = theme === "dark" || (theme === "auto" && prefersDark);
+        if (useDark) document.documentElement.classList.add("theme-dark");
+        if (density === "compacta") document.documentElement.classList.add("density-compact");
+        document.addEventListener("DOMContentLoaded", function () {
+          if (useDark) document.body.classList.add("theme-dark");
+          if (density === "compacta") document.body.classList.add("density-compact");
+        });
+      } catch (e) {}
+    })();
+  </script>
   <link rel="icon" type="image/png" href="assets/img/imagen.png">
   <link rel="stylesheet" href="assets/css/style.css">
   <script src="https://unpkg.com/@supabase/supabase-js@2.49.1/dist/umd/supabase.js"></script>
 </head>
 <body class="page-profile">
+  <div class="brand-wrap">
+    <a class="brand-chip" href="index.html">
+      <img class="brand-logo" src="assets/img/imagen.png" alt="Logo de Recetas caseras">
+      <span class="brand-name">Recetas caseras</span>
+    </a>
+  </div>
+  <div class="auth-actions">
+  <button type="button" class="ghost danger" id="login-toggle" data-i18n="auth.login">Iniciar sesion</button>
+    <div class="user-menu-wrap" id="user-menu-wrap">
+      <button type="button" class="ghost user-chip" id="user-menu-toggle">
+        <img id="auth-avatar" class="user-avatar" alt="Avatar">
+        <span class="auth-user-name" id="auth-user"></span>
+        <span aria-hidden="true">&#9662;</span>
+      </button>
+    <div class="user-menu" id="user-menu">
+      <button type="button" class="ghost" id="toggle-form" hidden data-i18n="menu.new_recipe">Nueva receta</button>
+      <button type="button" class="ghost" id="my-recipes-btn" data-i18n="menu.my_recipes">Mis recetas</button>
+      <button type="button" class="ghost" id="favorites-btn" data-i18n="menu.favorites">Favoritas</button>
+      <button type="button" class="ghost" id="profile-btn" data-i18n="menu.profile">Perfil</button>
+      <button type="button" class="ghost danger" id="logout-btn" data-menu-managed="true" data-i18n="menu.logout">Cerrar sesion</button>
+    </div>
+  </div>
+</div>
   <div class="profile-shell">
     <div class="profile-card">
       <div class="profile-header">
         <div>
           <p class="eyebrow">Perfil</p>
-          <h1>Tu informacion</h1>
-        </div>
-        <div class="profile-actions">
-          <a class="ghost back-btn" href="index.html">Volver</a>
-          <button type="button" class="ghost danger" id="logout-btn">Cerrar sesion</button>
+          <h1>Tu informaci&oacute;n</h1>
         </div>
       </div>
 
@@ -55,10 +93,18 @@
     </div>
   </div>
 
+  <script type="module" src="assets/js/user-menu.js"></script>
   <script type="module" src="assets/js/profile.js"></script>
-  <div class="watermark">
-    &copy; AdrianLM
-  </div>
+  <footer class="site-footer">
+    <nav class="footer-links" aria-label="Enlaces del pie">
+      <a href="#">Condiciones de uso y venta</a>
+      <a href="#">Aviso de privacidad</a>
+      <a href="#">&Aacute;rea legal</a>
+      <a href="#">Cookies</a>
+      <a href="#">Publicidad basada en intereses</a>
+    </nav>
+    <p class="footer-copy">&copy; 2026 Recetas caseras. Todos los derechos reservados.</p>
+  </footer>
 
 </body>
 </html>

@@ -4,41 +4,57 @@
   <meta charset="UTF-8">
   <title>Acceso a Recetas</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>
+    (function () {
+      try {
+        var raw = localStorage.getItem("recetas-preferences");
+        if (!raw) return;
+        var prefs = JSON.parse(raw);
+        var theme = prefs.theme || "auto";
+        var density = prefs.density || "comoda";
+        var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+        var useDark = theme === "dark" || (theme === "auto" && prefersDark);
+        if (useDark) document.documentElement.classList.add("theme-dark");
+        if (density === "compacta") document.documentElement.classList.add("density-compact");
+        document.addEventListener("DOMContentLoaded", function () {
+          if (useDark) document.body.classList.add("theme-dark");
+          if (density === "compacta") document.body.classList.add("density-compact");
+        });
+      } catch (e) {}
+    })();
+  </script>
   <link rel="icon" type="image/png" href="assets/img/imagen.png">
   <link rel="stylesheet" href="assets/css/style.css">
   <script src="https://unpkg.com/@supabase/supabase-js@2.49.1/dist/umd/supabase.js"></script>
 </head>
 <body class="auth-body">
+  <div class="brand-wrap">
+    <a class="brand-chip" href="index.html">
+      <img class="brand-logo" src="assets/img/imagen.png" alt="Logo de Recetas caseras">
+      <span class="brand-name">Recetas caseras</span>
+    </a>
+  </div>
   <main class="auth-shell">
-    <section class="auth-hero">
-      <h1>Accede o crea tu cuenta</h1>
-      <p>Guarda tus recetas, súbelas con foto y compártelas con quien quieras. Inicia sesión para crear, editar o marcar favoritas.</p>
-      <div class="auth-actions">
-        <a class="ghost" href="index.html">Volver a recetas</a>
-      </div>
-    </section>
-
     <section class="panel auth-card" id="login-card">
       <p class="eyebrow">Acceso</p>
-      <h1>Inicia sesion</h1>
+      <h1>Inicia sesi&oacute;n</h1>
       <form id="login-form" class="stack" autocomplete="off">
         <label class="field">
           <span>Correo</span>
           <input type="email" id="login-email" name="login-email" required placeholder="tu-correo@ejemplo.com">
         </label>
         <label class="field">
-          <span>Contrasena</span>
+          <span>Contrase&ntilde;a</span>
           <input type="password" id="login-password" name="login-password" required placeholder="********">
         </label>
         <div class="auth-actions-row">
           <button type="submit" class="primary" id="login-btn">Entrar</button>
-          <button type="button" class="ghost outline" id="forgot-password">Olvide mi contrasena</button>
+          <button type="button" class="ghost outline" id="forgot-password">Olvid&eacute; mi contrasena</button>
         </div>
         <p class="login-error" id="login-error" hidden></p>
       </form>
       <div class="auth-divider"><span>o</span></div>
       <button type="button" class="social-btn" id="google-btn">Continuar con Google</button>
-      <p class="muted signup-link">No tienes cuenta? <button type="button" class="ghost linklike" id="to-signup">Crear cuenta</button></p>
     </section>
 
     <section class="panel auth-card" id="signup-card" hidden>
@@ -50,7 +66,7 @@
           <input type="email" id="signup-email" name="signup-email" required placeholder="tu-correo@ejemplo.com">
         </label>
         <label class="field">
-          <span>Contrasena</span>
+          <span>Contrase&ntilde;a</span>
           <input type="password" id="signup-password" name="signup-password" required placeholder="********">
         </label>
         <label class="field">
@@ -64,20 +80,25 @@
         <button type="submit" class="primary" id="signup-btn">Crear cuenta</button>
         <p class="login-error" id="signup-error" hidden></p>
       </form>
-      <p class="muted">Ya tienes cuenta? <button type="button" class="ghost linklike" id="to-login">Inicia sesion</button></p>
+      <p class="muted">Â¿Ya tienes cuenta? <button type="button" class="ghost linklike" id="to-login">Inicia sesi&oacute;n</button></p>
     </section>
 
     <div class="auth-status" id="auth-status" hidden></div>
   </main>
 
   <script type="module" src="assets/js/auth.js"></script>
-  <div class="watermark">
-    &copy; AdrianLM
-  </div>
+  <footer class="site-footer">
+    <nav class="footer-links" aria-label="Enlaces del pie">
+      <a href="#">Condiciones de uso y venta</a>
+      <a href="#">Aviso de privacidad</a>
+      <a href="#">&Aacute;rea legal</a>
+      <a href="#">Cookies</a>
+      <a href="#">Publicidad basada en intereses</a>
+    </nav>
+    <p class="footer-copy">&copy; 2026 Recetas caseras. Todos los derechos reservados.</p>
+  </footer>
 
 </body>
 </html>
-
-
 
 

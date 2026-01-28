@@ -21,7 +21,9 @@ const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif
 init();
 
 async function init() {
-  logoutBtn?.addEventListener("click", handleLogout);
+  if (logoutBtn && logoutBtn.dataset.menuManaged !== "true") {
+    logoutBtn.addEventListener("click", handleLogout);
+  }
   form?.addEventListener("submit", handleSave);
   avatarFile?.addEventListener("change", handleAvatarChange);
   avatarUploadBtn?.addEventListener("click", () => avatarFile?.click());
@@ -139,7 +141,7 @@ function isValidAvatarFile(file) {
     alert('El archivo debe ser una imagen JPG, PNG, WEBP o GIF.');
   }
   if (!sizeOk) {
-    alert(`La imagen pesa demasiado (${Math.round(file.size / 1024 / 1024)}MB). Maximo ${Math.round(MAX_AVATAR_FILE_SIZE / 1024 / 1024)}MB.`);
+    alert(`La imagen pesa demasiado (${Math.round(file.size / 1024 / 1024)}MB). M\u00e1ximo ${Math.round(MAX_AVATAR_FILE_SIZE / 1024 / 1024)}MB.`);
   }
   return typeOk && sizeOk;
 }
@@ -148,7 +150,7 @@ async function validateAvatarDimensions(file) {
   try {
     const { width, height } = await readImageDimensions(file);
     if (width > MAX_AVATAR_WIDTH || height > MAX_AVATAR_HEIGHT) {
-      alert(`La imagen es demasiado grande (${width}x${height}). Maximo ${MAX_AVATAR_WIDTH}x${MAX_AVATAR_HEIGHT}.`);
+      alert(`La imagen es demasiado grande (${width}x${height}). M\u00e1ximo ${MAX_AVATAR_WIDTH}x${MAX_AVATAR_HEIGHT}.`);
       avatarSelectedFile = null;
       avatarFile.value = "";
       return;
@@ -182,7 +184,7 @@ async function handleLogout() {
   try {
     await supabase.auth.signOut();
   } catch (err) {
-    console.error("Error al cerrar sesion", err);
+    console.error("Error al cerrar sesi\u00f3n", err);
   } finally {
     window.location.href = "auth.html";
   }

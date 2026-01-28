@@ -34,7 +34,7 @@ async function ensureSession() {
   submitBtn.disabled = !isLogged;
   authHint.textContent = isLogged
     ? "Puedes guardar y eliminar recetas."
-    : "Inicia sesion para guardar recetas.";
+    : "Inicia sesi\u00f3n para guardar recetas.";
   if (!isLogged) {
     window.location.href = "auth.html";
   }
@@ -89,10 +89,20 @@ async function handleSubmit(event) {
           foto_url: fotoUrl ?? null,
           categoria,
           tags,
+          image_status: fotoUrl ? "ready" : "pending",
         })
         .eq("id", editingId)
         .eq("user_id", currentSession.user.id);
       if (error) throw error;
+      if (!fotoUrl) {
+        await triggerImageGeneration({
+          id: editingId,
+          titulo,
+          ingredientes,
+          categoria,
+          tags,
+        });
+      }
     } else {
       const nuevaReceta = {
         id: crypto.randomUUID(),
@@ -104,11 +114,16 @@ async function handleSubmit(event) {
         fecha: new Date().toISOString(),
         categoria,
         tags,
+        image_status: fotoUrl ? "ready" : "pending",
         user_id: currentSession.user.id,
       };
 
       const { error } = await supabase.from("recetas").insert(nuevaReceta);
       if (error) throw error;
+
+      if (!fotoUrl) {
+        await triggerImageGeneration(nuevaReceta);
+      }
     }
 
     form.reset();
@@ -116,7 +131,7 @@ async function handleSubmit(event) {
     window.location.href = "index.html";
   } catch (err) {
     console.error(err);
-    alert(err?.message || "No se pudo guardar la receta. Inténtalo de nuevo.");
+    alert(err?.message || "No se pudo guardar la receta. Int\u00e9ntalo de nuevo.");
   } finally {
     submitBtn.disabled = false;
     submitBtn.textContent = editingId ? "Guardar cambios" : "Guardar receta";
@@ -219,7 +234,7 @@ async function loadIfEditing() {
     const { data, error } = await supabase.from("recetas").select("*").eq("id", id).maybeSingle();
     if (error) throw error;
     if (!data) {
-      alert("No se encontró la receta.");
+      alert("No se encontr\u00f3 la receta.");
       window.location.href = "index.html";
       return;
     }
@@ -249,5 +264,21 @@ async function loadIfEditing() {
     console.error(err);
     alert(err?.message || "No se pudo cargar la receta.");
     window.location.href = "index.html";
+  }
+}
+
+async function triggerImageGeneration(receta) {
+  try {
+    await supabase.functions.invoke("generate-recipe-image", {
+      body: {
+        receta_id: receta.id,
+        titulo: receta.titulo,
+        ingredientes: receta.ingredientes,
+        categoria: receta.categoria,
+        tags: receta.tags,
+      },
+    });
+  } catch (err) {
+    console.warn("No se pudo generar la imagen", err);
   }
 }

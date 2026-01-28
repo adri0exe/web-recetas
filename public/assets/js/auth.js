@@ -49,11 +49,11 @@ async function handleLogin(event) {
     const password = loginPassword.value;
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
-    setStatus("Sesion iniciada. Redirigiendo...", "success");
+    setStatus("Sesi\u00f3n iniciada. Redirigiendo...", "success");
     window.location.href = "index.html";
   } catch (err) {
     loginError.hidden = false;
-    loginError.textContent = err.message || "No se pudo iniciar sesion.";
+    loginError.textContent = err.message || "No se pudo iniciar sesi\u00f3n.";
   } finally {
     loginBtn.disabled = false;
     loginBtn.textContent = "Entrar";
@@ -89,7 +89,7 @@ async function handleSignup(event) {
       window.location.href = "index.html";
     } else {
       setStatus(
-        "Cuenta creada. Revisa tu correo para confirmar y luego inicia sesion.",
+        "Cuenta creada. Revisa tu correo para confirmar y luego inicia sesi\u00f3n.",
         "info"
       );
     }
@@ -115,7 +115,7 @@ async function handleGoogleLogin() {
     if (error) throw error;
     setStatus("Redirigiendo a Google...", "info");
   } catch (err) {
-    setStatus(err.message || "No se pudo iniciar sesion con Google.", "error");
+    setStatus(err.message || "No se pudo iniciar sesi\u00f3n con Google.", "error");
   } finally {
     googleBtn.disabled = false;
     googleBtn.textContent = "Continuar con Google";
@@ -138,10 +138,10 @@ async function handleResetPassword() {
     if (error) throw error;
     setStatus("Te enviamos un enlace para restablecer tu contrasena.", "info");
   } catch (err) {
-    setStatus(err.message || "No se pudo enviar el enlace de recuperacion.", "error");
+    setStatus(err.message || "No se pudo enviar el enlace de recuperaci\u00f3n.", "error");
   } finally {
     forgotBtn.disabled = false;
-    forgotBtn.textContent = "Olvide mi contrasena";
+    forgotBtn.textContent = "Olvid\u00e9 mi contrasena";
   }
 }
 

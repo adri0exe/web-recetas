@@ -9,7 +9,7 @@ async function init() {
   const term = (new URLSearchParams(window.location.search).get("q") || "").trim();
   if (!term) {
     titleEl.textContent = "Escribe algo para buscar";
-    resultsEl.innerHTML = "<p class='muted'>No hay termino de busqueda.</p>";
+    resultsEl.innerHTML = "<p class='muted'>No hay t\u00e9rmino de b\u00fasqueda.</p>";
     return;
   }
   titleEl.textContent = `Buscando: ${term}`;
@@ -34,7 +34,7 @@ async function searchRecetas(term) {
     await fallbackSearch(term);
   } catch (err) {
     console.error("No se pudieron cargar los resultados", err);
-    resultsEl.innerHTML = "<p class='muted'>No se pudieron cargar los resultados. Intentalo de nuevo.</p>";
+    resultsEl.innerHTML = "<p class='muted'>No se pudieron cargar los resultados. Int\u00e9ntalo de nuevo.</p>";
   }
 }
 
@@ -68,7 +68,7 @@ async function fallbackSearch(term) {
 
   if (error) {
     console.error("Fallback search error", error);
-    resultsEl.innerHTML = "<p class='muted'>No se pudieron cargar los resultados. Intentalo de nuevo.</p>";
+    resultsEl.innerHTML = "<p class='muted'>No se pudieron cargar los resultados. Int\u00e9ntalo de nuevo.</p>";
     return;
   }
 
@@ -94,7 +94,7 @@ function renderResults(recetas) {
 
     const summary = document.createElement("p");
     summary.className = "muted";
-    summary.textContent = receta.resumen || "Sin descripcion";
+    summary.textContent = receta.resumen || "Sin descripci\u00f3n";
 
     const meta = document.createElement("p");
     meta.className = "muted";

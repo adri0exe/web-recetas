@@ -1,17 +1,36 @@
-﻿import { supabase } from "./supabaseClient.js";
-import { STORAGE_BUCKET, SUPABASE_URL } from "./config.js";
+import { supabase } from "./supabaseClient.js";
+import { SUPABASE_URL } from "./config.js";
+import { applyPreferences, loadUserPreferences } from "./preferences.js";
 
 (async function () {
-
-  let recetas = [];
+  let featuredRecetas = [];
+  let featuredIndex = 0;
+  let isAnimating = false;
   let currentSession = null;
   let isAdmin = false;
   let selfProfile = null;
   let sessionReady = false;
   let favoriteIds = new Set();
+  const MORE_PAGE_SIZE = 10;
+  let morePage = 0;
+  let moreLoading = false;
+  let moreDone = false;
 
-  const recetasContainer = document.getElementById("recetas");
-  const template = document.getElementById("receta-template");
+  const STAR_ON = String.fromCharCode(9733);
+  const STAR_OFF = String.fromCharCode(9734);
+
+  const featuredStage = document.getElementById("featured-stage");
+  const featuredTemplate = document.getElementById("featured-template");
+  const featuredPrevBtn = document.getElementById("featured-prev");
+  const featuredNextBtn = document.getElementById("featured-next");
+  const featuredCounter = document.getElementById("featured-counter");
+  const featuredDots = document.getElementById("featured-dots");
+  const featuredEmpty = document.getElementById("featured-empty");
+  const randomRecetasEl = document.getElementById("random-recetas");
+  const randomTemplate = document.getElementById("random-receta-template");
+  const moreRecetasEl = document.getElementById("more-recetas");
+  const loadMoreBtn = document.getElementById("load-more-recetas");
+
   const loginToggle = document.getElementById("login-toggle");
   const logoutBtn = document.getElementById("logout-btn");
   const userMenuWrap = document.getElementById("user-menu-wrap");
@@ -20,37 +39,20 @@ import { STORAGE_BUCKET, SUPABASE_URL } from "./config.js";
   const profileBtn = document.getElementById("profile-btn");
   const favoritesBtn = document.getElementById("favorites-btn");
   const myRecipesBtn = document.getElementById("my-recipes-btn");
+  const settingsBtn = document.getElementById("settings-btn");
   const authUser = document.getElementById("auth-user");
   const authAvatar = document.getElementById("auth-avatar");
   const toggleFormBtn = document.getElementById("toggle-form");
-  const lightbox = document.getElementById("image-lightbox");
-  const lightboxImg = document.getElementById("lightbox-img");
-  const closeLightboxBtn = document.getElementById("close-lightbox");
-  const searchForm = document.getElementById("search-form");
-  const searchInput = document.getElementById("search-receta");
-  const sortSelect = document.getElementById("sort-select");
-  const toggleFiltersBtn = document.getElementById("toggle-filters");
-  const filtersPanel = document.getElementById("filters-panel");
-  const clearFiltersBtn = document.getElementById("clear-filters");
-  const filterCategoryInputs = Array.from(document.querySelectorAll('input[name="filter-categoria"]'));
-  const filterTagInputs = Array.from(document.querySelectorAll('input[name="filter-tag"]'));
   const confirmOverlay = document.getElementById("confirm-overlay");
   const confirmMessage = document.getElementById("confirm-message");
   const confirmCancel = document.getElementById("confirm-cancel");
   const confirmAccept = document.getElementById("confirm-accept");
-  const pagination = document.getElementById("pagination");
-  const prevPageBtn = document.getElementById("prev-page");
-  const nextPageBtn = document.getElementById("next-page");
-  const pageInfo = document.getElementById("page-info");
-  let searchTerm = "";
-  let currentPage = 1;
-  const pageSize = 5;
-  let sortOption = "newest";
-  let selectedCategories = new Set();
-  let selectedTags = new Set();
 
   attachListeners();
+  await syncPreferences();
   await syncRecetas();
+  await loadRandomRecetas();
+  await loadMoreRecetas();
   await ensureSession();
 
   supabase.auth.onAuthStateChange(async (_event, session) => {
@@ -65,6 +67,7 @@ import { STORAGE_BUCKET, SUPABASE_URL } from "./config.js";
     await fetchSelfProfile();
     await loadFavorites();
     await loadUserRole();
+    await syncPreferences();
     sessionReady = true;
     updateAuthUI();
   });
@@ -83,46 +86,28 @@ import { STORAGE_BUCKET, SUPABASE_URL } from "./config.js";
     profileBtn?.addEventListener("click", redirectToProfile);
     myRecipesBtn?.addEventListener("click", redirectToMyRecipes);
     favoritesBtn?.addEventListener("click", redirectToFavorites);
+    settingsBtn?.addEventListener("click", redirectToSettings);
     toggleFormBtn.addEventListener("click", toggleFormVisibility);
-    closeLightboxBtn.addEventListener("click", hideLightbox);
-    lightbox.addEventListener("click", (e) => {
-      if (e.target === lightbox) hideLightbox();
-    });
-    searchForm?.addEventListener("submit", handleSearchSubmit);
-    sortSelect?.addEventListener("change", handleSortChange);
-    normalizeSortLabels();
-    toggleFiltersBtn?.addEventListener("click", toggleFiltersPanel);
-    filterCategoryInputs.forEach((input) => input.addEventListener("change", handleFiltersChange));
-    filterTagInputs.forEach((input) => input.addEventListener("change", handleFiltersChange));
-    clearFiltersBtn?.addEventListener("click", clearFilters);
-    prevPageBtn.addEventListener("click", () => changePage(-1));
-    nextPageBtn.addEventListener("click", () => changePage(1));
 
-    recetasContainer.addEventListener("click", async (event) => {
-      const img = event.target.closest(".receta-img");
-      if (img && img.dataset.full) {
-        showLightbox(img.dataset.full, img.alt || "Foto de la receta");
+    featuredPrevBtn?.addEventListener("click", () => moveFeatured(-1));
+    featuredNextBtn?.addEventListener("click", () => moveFeatured(1));
+
+    featuredDots?.addEventListener("click", (event) => {
+      const dot = event.target.closest("button[data-index]");
+      if (!dot) return;
+      const index = Number(dot.dataset.index || 0);
+      jumpFeatured(index);
+    });
+
+    featuredStage?.addEventListener("click", async (event) => {
+      const featuredBtn = event.target.closest("[data-accion='destacada']");
+      if (featuredBtn) {
+        if (!isAdmin) return;
+        const id = featuredBtn.dataset.id;
+        if (!id) return;
+        await toggleDestacada(id, featuredBtn);
         return;
       }
-
-      const editBtn = event.target.closest("[data-accion='editar']");
-          if (editBtn) {
-            if (!currentSession) {
-              alert("Inicia sesion para editar recetas.");
-              redirectToAuth();
-              return;
-            }
-            const id = editBtn.dataset.id;
-            if (!id) return;
-            const receta = recetas.find((r) => r.id === id);
-            if (!receta) return;
-            if (!isAdmin && receta.user_id !== currentSession.user.id) {
-              alert("Solo el autor o un admin puede editar esta receta.");
-              return;
-            }
-            window.location.href = `create.html?id=${encodeURIComponent(id)}`;
-            return;
-          }
 
       const starBtn = event.target.closest("[data-accion='favorita']");
       if (starBtn) {
@@ -135,33 +120,41 @@ import { STORAGE_BUCKET, SUPABASE_URL } from "./config.js";
         if (!id) return;
         const esFavorita = favoriteIds.has(id);
         const ok = await showConfirmModal(
-          esFavorita ? "\u00bfEliminar de favoritos?" : "\u00bfA\u00f1adir a favoritos?",
-          esFavorita ? "Eliminar" : "A\u00f1adir"
+          esFavorita ? "Eliminar de favoritos?" : "Anadir a favoritos?",
+          esFavorita ? "Eliminar" : "Anadir"
         );
         if (!ok) return;
         await toggleFavorita(id, starBtn);
         return;
       }
 
-      const btn = event.target.closest("[data-accion='eliminar']");
-          if (!btn) return;
-          if (!currentSession) {
-            alert("Inicia sesion para eliminar recetas.");
-            redirectToAuth();
-            return;
-          }
-          const id = btn.dataset.id;
-          if (!id) return;
-          const receta = recetas.find((r) => r.id === id);
-          if (!isAdmin && receta?.user_id !== currentSession.user.id) {
-            alert("Solo el autor o un admin puede eliminar esta receta.");
-            return;
-          }
-          const confirmar = await showConfirmModal("\u00bfEliminar esta receta?");
-          if (!confirmar) return;
-          await eliminarReceta(id, btn);
-        });
-      }
+      const card = event.target.closest(".featured-card");
+      if (!card || event.target.closest("button") || event.target.closest("a")) return;
+      const id = card.dataset.id;
+      if (!id) return;
+      window.location.href = `recipe-view.html?id=${encodeURIComponent(id)}`;
+    });
+
+    randomRecetasEl?.addEventListener("click", (event) => {
+      const card = event.target.closest(".receta");
+      if (!card || event.target.closest("button") || event.target.closest("a")) return;
+      const id = card.dataset.id;
+      if (!id) return;
+      window.location.href = `recipe-view.html?id=${encodeURIComponent(id)}`;
+    });
+
+    loadMoreBtn?.addEventListener("click", () => {
+      loadMoreRecetas();
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (!featuredRecetas.length) return;
+      const target = event.target;
+      if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) return;
+      if (event.key === "ArrowRight") moveFeatured(1);
+      if (event.key === "ArrowLeft") moveFeatured(-1);
+    });
+  }
 
   async function ensureSession() {
     const { data } = await supabase.auth.getSession();
@@ -172,6 +165,7 @@ import { STORAGE_BUCKET, SUPABASE_URL } from "./config.js";
     await fetchSelfProfile();
     await loadFavorites();
     await loadUserRole();
+    await syncPreferences();
     sessionReady = true;
     updateAuthUI();
   }
@@ -190,17 +184,19 @@ import { STORAGE_BUCKET, SUPABASE_URL } from "./config.js";
       userMenuWrap.style.display = "inline-block";
       const displayName = selfProfile?.username || getDisplayName(currentSession.user);
       authUser.textContent = displayName;
+      renderAdminBadge(authUser);
       if (authAvatar) {
         authAvatar.src = getAvatarUrl(selfProfile, currentSession.user);
       }
     } else {
       userMenuWrap.style.display = "none";
       authUser.textContent = "";
+      clearAdminBadge();
       if (authAvatar) authAvatar.removeAttribute("src");
     }
     toggleFormBtn.hidden = !isLogged;
     toggleFormBtn.textContent = "Nueva receta";
-    renderRecetas();
+    renderFeatured();
   }
 
   function toggleFormVisibility() {
@@ -208,7 +204,9 @@ import { STORAGE_BUCKET, SUPABASE_URL } from "./config.js";
   }
 
   async function syncRecetas() {
-    recetasContainer.innerHTML = '<p class="muted">Cargando recetas...</p>';
+    if (featuredStage) {
+      featuredStage.innerHTML = '<p class="muted">Cargando destacadas...</p>';
+    }
     try {
       const { data, error } = await supabase
         .from("recetas")
@@ -220,24 +218,356 @@ import { STORAGE_BUCKET, SUPABASE_URL } from "./config.js";
             avatar_url
           )
         `)
-        .order("fecha", { ascending: false });
+        .eq("destacada", true)
+        .order("views", { ascending: false, nullsFirst: false })
+        .limit(8);
       if (error) throw error;
-      recetas = data || [];
+      featuredRecetas = (data || []).filter((receta) => hasRecipeImage(receta));
       applyFavoriteFlags();
-      currentPage = 1;
-      renderRecetas();
+      featuredIndex = 0;
+      renderFeatured();
     } catch (err) {
-      console.error("No se pudieron cargar las recetas", err);
-      recetasContainer.innerHTML =
-        '<p class="empty">No se pudieron cargar las recetas. Comprueba tu conexion.</p>';
+      console.error("No se pudieron cargar las recetas destacadas", err);
+      if (featuredStage) {
+        featuredStage.innerHTML =
+          '<p class="empty">No se pudieron cargar las destacadas. Comprueba tu conexion.</p>';
+      }
     }
+  }
+
+  function renderFeatured() {
+    if (!featuredStage) return;
+
+    if (!featuredRecetas.length) {
+      featuredStage.innerHTML = "";
+      featuredStage.style.height = "";
+      if (featuredEmpty) {
+        featuredEmpty.hidden = false;
+        featuredStage.appendChild(featuredEmpty);
+      }
+      updateFeaturedControls();
+      return;
+    }
+
+    if (featuredEmpty) featuredEmpty.hidden = true;
+
+    const total = featuredRecetas.length;
+    const receta = featuredRecetas[featuredIndex];
+    const prev = total > 1 ? featuredRecetas[getWrappedIndex(featuredIndex - 1, total)] : null;
+    const next = total > 1 ? featuredRecetas[getWrappedIndex(featuredIndex + 1, total)] : null;
+    const card = buildFeaturedCard(receta, "featured-card--current");
+    featuredStage.innerHTML = "";
+    if (prev) featuredStage.appendChild(buildFeaturedCard(prev, "featured-card--prev"));
+    if (next) featuredStage.appendChild(buildFeaturedCard(next, "featured-card--next"));
+    featuredStage.appendChild(card);
+    updateFeaturedStageHeight();
+    updateFeaturedControls();
+  }
+
+  function buildFeaturedCard(receta, variantClass) {
+    const clone = featuredTemplate.content.cloneNode(true);
+    const card = clone.querySelector(".featured-card");
+    const titleEl = clone.querySelector(".featured-title");
+    const imgEl = clone.querySelector(".featured-img");
+    const summaryEl = clone.querySelector(".featured-summary");
+    const metaEl = clone.querySelector(".featured-meta");
+    const tagsEl = clone.querySelector(".featured-tags");
+    const starBtn = clone.querySelector(".star-btn");
+    const featuredBtn = clone.querySelector(".featured-toggle");
+    const ctaBtn = clone.querySelector(".featured-cta .primary");
+
+    if (card) card.dataset.id = receta.id;
+    titleEl.textContent = receta.titulo;
+    summaryEl.textContent = truncateText(getSummary(receta), 160);
+
+    metaEl.innerHTML = "";
+    metaEl.appendChild(document.createTextNode(`${formatFecha(receta.fecha)} - `));
+    if (receta.user_id) {
+      const link = document.createElement("a");
+      link.href = `profile-view.html?id=${encodeURIComponent(receta.user_id)}`;
+      link.className = "author-link";
+      link.textContent = displayAuthor(receta);
+      metaEl.appendChild(link);
+    } else {
+      metaEl.appendChild(document.createTextNode(displayAuthor(receta)));
+    }
+
+    starBtn.dataset.id = receta.id;
+    starBtn.disabled = !currentSession;
+    starBtn.classList.toggle("hidden", !currentSession);
+    starBtn.hidden = !currentSession;
+    const favorita = favoriteIds.has(receta.id);
+    starBtn.textContent = favorita ? STAR_ON : STAR_OFF;
+    starBtn.classList.toggle("starred", favorita);
+
+    if (featuredBtn) {
+      featuredBtn.dataset.id = receta.id;
+      featuredBtn.hidden = !isAdmin;
+      featuredBtn.classList.toggle("hidden", !isAdmin);
+      setFeaturedButtonState(featuredBtn, Boolean(receta.destacada));
+    }
+
+    const fotoUrl = receta.foto_url || receta.foto || "assets/img/imagen.png";
+    imgEl.src = fotoUrl;
+    imgEl.alt = `Foto de ${receta.titulo}`;
+
+    tagsEl.innerHTML = "";
+    const tags = Array.isArray(receta.tags) ? receta.tags.slice(0, 4) : [];
+    if (tags.length) {
+      tags.forEach((tag) => {
+        const chip = document.createElement("span");
+        chip.className = "featured-tag";
+        chip.textContent = tag;
+        tagsEl.appendChild(chip);
+      });
+    }
+
+    if (ctaBtn) {
+      ctaBtn.addEventListener("click", (event) => {
+        event.stopPropagation();
+        window.location.href = `recipe-view.html?id=${encodeURIComponent(receta.id)}`;
+      });
+    }
+
+    return card;
+  }
+
+  async function loadRandomRecetas() {
+    if (!randomRecetasEl) return;
+    randomRecetasEl.innerHTML = '<p class="muted">Cargando recetas aleatorias...</p>';
+    try {
+      const { data, error } = await supabase
+        .from("recetas")
+        .select(`
+          *,
+          profiles:profiles (
+            username,
+            full_name,
+            avatar_url
+          )
+        `)
+        .order("fecha", { ascending: false })
+        .limit(6);
+      if (error) throw error;
+      const pool = Array.isArray(data) ? data : [];
+      const source = pool.length ? pool : featuredRecetas;
+      renderRandomRecetas(source.slice(0, 6));
+    } catch (err) {
+      console.error("No se pudieron cargar recetas aleatorias", err);
+      randomRecetasEl.innerHTML =
+        '<p class="empty">No se pudieron cargar las recetas aleatorias. Comprueba tu conexion.</p>';
+    }
+  }
+
+  async function loadMoreRecetas() {
+    if (!moreRecetasEl || moreLoading || moreDone) return;
+    moreLoading = true;
+    if (loadMoreBtn) loadMoreBtn.disabled = true;
+    if (morePage === 0) {
+      moreRecetasEl.innerHTML = '<p class="muted">Cargando mas recetas...</p>';
+    }
+    try {
+      const from = morePage * MORE_PAGE_SIZE;
+      const to = from + MORE_PAGE_SIZE - 1;
+      const { data, error } = await supabase
+        .from("recetas")
+        .select(
+          `
+          *,
+          profiles:profiles (
+            username,
+            full_name,
+            avatar_url
+          )
+        `
+        )
+        .order("fecha", { ascending: false })
+        .range(from, to);
+      if (error) throw error;
+      const items = Array.isArray(data) ? data : [];
+      if (!items.length && morePage === 0) {
+        moreRecetasEl.innerHTML = '<p class="empty">No hay mas recetas para mostrar.</p>';
+        if (loadMoreBtn) loadMoreBtn.hidden = true;
+        moreDone = true;
+        return;
+      }
+      if (morePage === 0) moreRecetasEl.innerHTML = "";
+      items.forEach((receta) => {
+        const card = buildRandomCard(receta);
+        if (card) moreRecetasEl.appendChild(card);
+      });
+      if (items.length < MORE_PAGE_SIZE) {
+        moreDone = true;
+        if (loadMoreBtn) loadMoreBtn.hidden = true;
+      }
+      morePage += 1;
+    } catch (err) {
+      console.error("No se pudieron cargar mas recetas", err);
+      if (morePage === 0) {
+        moreRecetasEl.innerHTML =
+          '<p class="empty">No se pudieron cargar mas recetas. Comprueba tu conexion.</p>';
+      }
+    } finally {
+      moreLoading = false;
+      if (loadMoreBtn) loadMoreBtn.disabled = false;
+    }
+  }
+
+  function renderRandomRecetas(recetas) {
+    if (!randomRecetasEl) return;
+    randomRecetasEl.innerHTML = "";
+    if (!Array.isArray(recetas) || !recetas.length) {
+      randomRecetasEl.innerHTML = '<p class="empty">No hay recetas aleatorias para mostrar.</p>';
+      return;
+    }
+    recetas.forEach((receta) => {
+      const card = buildRandomCard(receta);
+      if (card) randomRecetasEl.appendChild(card);
+    });
+  }
+
+  function buildRandomCard(receta) {
+    if (!randomTemplate) return null;
+    const clone = randomTemplate.content.cloneNode(true);
+    const card = clone.querySelector(".receta");
+    const titleEl = clone.querySelector(".receta-title");
+    const summaryEl = clone.querySelector(".receta-summary");
+    const imgEl = clone.querySelector(".receta-img");
+    const mediaEl = clone.querySelector(".receta-media");
+    const metaTextEl = clone.querySelector(".receta-meta-text");
+    const tagsEl = clone.querySelector(".receta-tags");
+
+    if (card) {
+      card.dataset.id = receta.id;
+    }
+    if (titleEl) titleEl.textContent = receta.titulo || "Receta";
+    if (summaryEl) summaryEl.textContent = truncateText(getSummary(receta), 140);
+
+    if (metaTextEl) {
+      metaTextEl.textContent = `${formatFecha(receta.fecha)} - ${displayAuthor(receta)}`;
+    }
+
+    if (imgEl && mediaEl) {
+      const fotoUrl = receta.foto_url || receta.foto;
+      if (typeof fotoUrl === "string" && fotoUrl.trim().length > 0) {
+        imgEl.src = fotoUrl;
+        imgEl.alt = `Foto de ${receta.titulo || "receta"}`;
+      } else {
+        imgEl.remove();
+        const placeholder = document.createElement("div");
+        placeholder.className = "receta-no-image";
+        placeholder.textContent = "Sin imagen";
+        mediaEl.appendChild(placeholder);
+      }
+    }
+
+    if (tagsEl) {
+      tagsEl.innerHTML = "";
+      const tags = Array.isArray(receta.tags) ? receta.tags.slice(0, 4) : [];
+      tags.forEach((tag) => {
+        const chip = document.createElement("span");
+        chip.className = "tag-chip";
+        chip.textContent = tag;
+        tagsEl.appendChild(chip);
+      });
+    }
+
+    return card;
+  }
+
+  function moveFeatured(direction) {
+    if (!featuredRecetas.length) return;
+    const total = featuredRecetas.length;
+    if (total < 2) return;
+    const nextIndex = (featuredIndex + direction + total) % total;
+    transitionFeatured(nextIndex, direction > 0 ? "next" : "prev");
+  }
+
+  function jumpFeatured(index) {
+    if (!featuredRecetas.length) return;
+    if (index === featuredIndex) return;
+    const direction = index > featuredIndex ? "next" : "prev";
+    transitionFeatured(index, direction);
+  }
+
+  function transitionFeatured(index, direction) {
+    if (isAnimating) return;
+    if (!featuredStage) return;
+
+    if (prefersReducedMotion()) {
+      featuredIndex = index;
+      renderFeatured();
+      return;
+    }
+
+    const currentCard = featuredStage.querySelector(".featured-card--current");
+    const nextCard =
+      direction === "next"
+        ? featuredStage.querySelector(".featured-card--next")
+        : featuredStage.querySelector(".featured-card--prev");
+    const otherCard =
+      direction === "next"
+        ? featuredStage.querySelector(".featured-card--prev")
+        : featuredStage.querySelector(".featured-card--next");
+    if (!currentCard || !nextCard) {
+      featuredIndex = index;
+      renderFeatured();
+      return;
+    }
+
+    isAnimating = true;
+    const exitClass = direction === "next" ? "is-exiting-next" : "is-exiting-prev";
+    const enterClass = direction === "next" ? "is-entering-next" : "is-entering-prev";
+
+    currentCard.classList.add(exitClass);
+    nextCard.classList.add(enterClass);
+    if (otherCard) otherCard.classList.add("is-fading");
+
+    nextCard.addEventListener(
+      "animationend",
+      () => {
+        featuredIndex = index;
+        renderFeatured();
+        isAnimating = false;
+      },
+      { once: true }
+    );
+  }
+
+  function updateFeaturedControls() {
+    const total = featuredRecetas.length;
+    if (featuredCounter) {
+      featuredCounter.textContent = total ? `${featuredIndex + 1} / ${total}` : "0 / 0";
+    }
+    if (featuredPrevBtn) featuredPrevBtn.disabled = total < 2;
+    if (featuredNextBtn) featuredNextBtn.disabled = total < 2;
+    renderFeaturedDots(total);
+  }
+
+  function renderFeaturedDots(total) {
+    if (!featuredDots) return;
+    featuredDots.innerHTML = "";
+    if (!total) return;
+    for (let i = 0; i < total; i += 1) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "featured-dot";
+      if (i === featuredIndex) btn.classList.add("active");
+      btn.dataset.index = String(i);
+      btn.setAttribute("aria-label", `Ir a destacada ${i + 1}`);
+      featuredDots.appendChild(btn);
+    }
+  }
+
+  function prefersReducedMotion() {
+    return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   }
 
   async function handleLogout() {
     try {
       await supabase.auth.signOut();
     } catch (err) {
-      console.error("Error al cerrar sesi\u00f3n", err);
+      console.error("Error al cerrar sesion", err);
     } finally {
       window.location.href = window.location.href;
     }
@@ -260,255 +590,24 @@ import { STORAGE_BUCKET, SUPABASE_URL } from "./config.js";
     isAdmin = false;
     selfProfile = null;
     favoriteIds = new Set();
-    searchTerm = "";
-    searchInput.value = "";
     sessionReady = true;
+    syncPreferences();
     updateAuthUI();
   }
 
-  function renderRecetas() {
-    recetasContainer.innerHTML = "";
-
-    const filtradas = filterRecetas(recetas, searchTerm);
-    const ordenadas = sortRecetas(filtradas);
-
-    if (!ordenadas.length) {
-      recetasContainer.innerHTML = '<p class="empty">No hay recetas guardadas todavia.</p>';
-      pagination.hidden = true;
-      return;
-    }
-
-    const totalPages = Math.max(1, Math.ceil(ordenadas.length / pageSize));
-    if (currentPage > totalPages) currentPage = totalPages;
-    const start = (currentPage - 1) * pageSize;
-    const paginadas = ordenadas.slice(start, start + pageSize);
-
-    paginadas.forEach((receta) => {
-      const clone = template.content.cloneNode(true);
-      const titleEl = clone.querySelector(".receta-title");
-      const summaryEl = clone.querySelector(".receta-summary");
-      const imgEl = clone.querySelector(".receta-img");
-      const ingredientesEl = clone.querySelector(".ingredientes");
-      const pasosEl = clone.querySelector(".pasos");
-      const metaEl = clone.querySelector(".receta-meta-text");
-      const deleteBtn = clone.querySelector(".delete-btn");
-      const starBtn = clone.querySelector(".star-btn");
-      const editBtn = clone.querySelector(".edit-btn");
-
-      const puedeEditar = canEdit(receta);
-      titleEl.textContent = receta.titulo;
-      summaryEl.textContent = receta.resumen || "Sin descripcion";
-      metaEl.textContent = `${formatFecha(receta.fecha)} - `;
-      if (receta.user_id) {
-        const link = document.createElement("a");
-        link.href = `profile-view.html?id=${encodeURIComponent(receta.user_id)}`;
-        link.className = "author-link";
-        link.textContent = displayAuthor(receta);
-        metaEl.appendChild(link);
-      } else {
-        metaEl.appendChild(document.createTextNode(displayAuthor(receta)));
-      }
-      deleteBtn.dataset.id = receta.id;
-      deleteBtn.disabled = !puedeEditar;
-      deleteBtn.classList.toggle("hidden", !puedeEditar);
-      deleteBtn.hidden = !puedeEditar;
-      starBtn.dataset.id = receta.id;
-      starBtn.disabled = !currentSession;
-      starBtn.classList.toggle("hidden", !currentSession);
-      starBtn.hidden = !currentSession;
-      const favorita = favoriteIds.has(receta.id);
-      starBtn.textContent = favorita ? "\u2605" : "\u2606";
-      starBtn.classList.toggle("starred", favorita);
-      editBtn.dataset.id = receta.id;
-      editBtn.disabled = !puedeEditar;
-      editBtn.classList.toggle("hidden", !puedeEditar);
-      editBtn.hidden = !puedeEditar;
-
-      const fotoUrl = receta.foto_url || receta.foto || null;
-      if (fotoUrl) {
-        imgEl.src = fotoUrl;
-        imgEl.alt = `Foto de ${receta.titulo}`;
-        imgEl.dataset.full = fotoUrl;
-        imgEl.hidden = false;
-      } else {
-        imgEl.hidden = true;
-      }
-
-      ingredientesEl.innerHTML = "";
-      (receta.ingredientes || []).forEach((item) => {
-        const li = document.createElement("li");
-        li.textContent = item;
-        ingredientesEl.appendChild(li);
-      });
-
-      pasosEl.innerHTML = "";
-      (receta.pasos || []).forEach((item) => {
-        const li = document.createElement("li");
-        li.textContent = item;
-        pasosEl.appendChild(li);
-      });
-
-      const categoriaBadge = clone.querySelector(".category-badge");
-      if (receta.categoria) {
-        categoriaBadge.textContent = receta.categoria;
-        categoriaBadge.hidden = false;
-      } else {
-        categoriaBadge.hidden = true;
-      }
-
-      const tagsWrap = clone.querySelector(".receta-tags");
-      tagsWrap.innerHTML = "";
-      (receta.tags || []).forEach((tag) => {
-        const chip = document.createElement("span");
-        chip.className = "tag-chip";
-        chip.textContent = tag;
-        tagsWrap.appendChild(chip);
-      });
-
-      recetasContainer.appendChild(clone);
-    });
-
-    pagination.hidden = false;
-    pageInfo.textContent = `Pagina ${currentPage} de ${totalPages}`;
-    prevPageBtn.disabled = currentPage <= 1;
-    nextPageBtn.disabled = currentPage >= totalPages;
-  }
-
-  function handleSearchSubmit(event) {
-    event.preventDefault();
-    const term = (searchInput?.value || "").trim();
-    if (!term) return;
-    const url = new URL("search.html", window.location.href);
-    url.searchParams.set("q", term);
-    window.location.href = url.toString();
-  }
-
-  function handleSortChange(event) {
-    sortOption = event.target.value || "newest";
-    applySelectedSortLabel(sortOption);
-    currentPage = 1;
-    renderRecetas();
-  }
-
-  function normalizeSortLabels() {
-    if (!sortSelect) return;
-    Array.from(sortSelect.options).forEach((opt) => {
-      if (opt.dataset.label) {
-        opt.textContent = opt.dataset.label;
-      }
-    });
-    applySelectedSortLabel(sortSelect.value);
-  }
-
-  function applySelectedSortLabel(value) {
-    if (!sortSelect) return;
-    Array.from(sortSelect.options).forEach((opt) => {
-      if (opt.dataset.label) {
-        opt.textContent = opt.dataset.label;
-      }
-    });
-    const selected = Array.from(sortSelect.options).find((opt) => opt.value === value);
-    if (selected?.dataset.label) {
-      selected.textContent = `Ordenar por: ${selected.dataset.label}`;
-    }
-  }
-
-  function toggleFiltersPanel() {
-    filtersPanel?.classList.toggle("hidden");
-  }
-
-  function handleFiltersChange() {
-    selectedCategories = new Set(
-      filterCategoryInputs.filter((input) => input.checked).map((input) => normalizeText(input.value))
-    );
-    selectedTags = new Set(
-      filterTagInputs.filter((input) => input.checked).map((input) => normalizeText(input.value))
-    );
-    currentPage = 1;
-    renderRecetas();
-  }
-
-  function clearFilters() {
-    filterCategoryInputs.forEach((input) => (input.checked = false));
-    filterTagInputs.forEach((input) => (input.checked = false));
-    selectedCategories = new Set();
-    selectedTags = new Set();
-    currentPage = 1;
-    renderRecetas();
-  }
-
-  function filterRecetas(lista, term) {
-    let resultado = lista;
-    if (term) {
-      const query = normalizeText(term);
-      resultado = resultado.filter((receta) => {
-        const titulo = normalizeText(receta.titulo);
-        const resumen = normalizeText(receta.resumen);
-        const ingredientes = normalizeText((receta.ingredientes || []).join(" "));
-        const pasos = normalizeText((receta.pasos || []).join(" "));
-        const categoria = normalizeText(receta.categoria);
-        const tags = normalizeText((receta.tags || []).join(" "));
-        return (
-          titulo.includes(query) ||
-          resumen.includes(query) ||
-          ingredientes.includes(query) ||
-          pasos.includes(query) ||
-          categoria.includes(query) ||
-          tags.includes(query)
-        );
-      });
-    }
-
-    if (selectedCategories.size) {
-      resultado = resultado.filter((receta) => selectedCategories.has(normalizeText(receta.categoria)));
-    }
-
-    if (selectedTags.size) {
-      resultado = resultado.filter((receta) =>
-        (receta.tags || []).some((tag) => selectedTags.has(normalizeText(tag)))
-      );
-    }
-
-    return resultado;
-  }
-
-  function sortRecetas(lista) {
-    const copia = [...lista];
-    return copia.sort((a, b) => {
-      const fechaA = a.fecha ? new Date(a.fecha).getTime() : 0;
-      const fechaB = b.fecha ? new Date(b.fecha).getTime() : 0;
-
-      if (sortOption === "oldest") return fechaA - fechaB;
-      if (sortOption === "favorites") {
-        const favA = a.favorita ? 1 : 0;
-        const favB = b.favorita ? 1 : 0;
-        if (favA !== favB) return favB - favA;
-        return fechaB - fechaA;
-      }
-      return fechaB - fechaA;
+  function updateFeaturedStageHeight() {
+    if (!featuredStage) return;
+    const currentCard = featuredStage.querySelector(".featured-card--current");
+    if (!currentCard) return;
+    requestAnimationFrame(() => {
+      const extra = 40;
+      featuredStage.style.height = `${currentCard.offsetHeight + extra}px`;
     });
   }
 
-  function normalizeText(value) {
-    return (value || "")
-      .toString()
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "");
-  }
-
-  function changePage(delta) {
-    currentPage = Math.max(1, currentPage + delta);
-    renderRecetas();
-    scrollToRecetasTop();
-  }
-
-  function scrollToRecetasTop() {
-    if (recetasContainer?.scrollIntoView) {
-      recetasContainer.scrollIntoView({ behavior: "smooth", block: "start" });
-      return;
-    }
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  async function syncPreferences() {
+    const { prefs } = await loadUserPreferences();
+    applyPreferences(prefs);
   }
 
   function redirectToAuth() {
@@ -531,6 +630,10 @@ import { STORAGE_BUCKET, SUPABASE_URL } from "./config.js";
     window.location.href = "favorites.html";
   }
 
+  function redirectToSettings() {
+    window.location.href = "settings.html";
+  }
+
   function showConfirmModal(message, acceptLabel = "Aceptar") {
     return new Promise((resolve) => {
       if (!confirmOverlay || !confirmMessage || !confirmCancel || !confirmAccept) {
@@ -538,7 +641,7 @@ import { STORAGE_BUCKET, SUPABASE_URL } from "./config.js";
         resolve(fallback);
         return;
       }
-      confirmMessage.textContent = message || "\u00bfSeguro que quieres continuar?";
+      confirmMessage.textContent = message || "Seguro que quieres continuar?";
       confirmAccept.textContent = acceptLabel || "Aceptar";
       confirmOverlay.style.display = "flex";
 
@@ -592,30 +695,10 @@ import { STORAGE_BUCKET, SUPABASE_URL } from "./config.js";
     }
   }
 
-  async function eliminarReceta(id, btn) {
-    try {
-      btn.disabled = true;
-      let query = supabase.from("recetas").delete().eq("id", id);
-      if (!isAdmin && currentSession?.user?.id) {
-        query = query.eq("user_id", currentSession.user.id);
-      }
-      const { error } = await query;
-      if (error) throw error;
-      recetas = recetas.filter((receta) => receta.id !== id);
-      favoriteIds.delete(id);
-      renderRecetas();
-    } catch (err) {
-      console.error(err);
-      alert("No se pudo eliminar la receta. Intentalo de nuevo.");
-    } finally {
-      btn.disabled = false;
-    }
-  }
-
   async function toggleFavorita(id, btn) {
     try {
       btn.disabled = true;
-      const receta = recetas.find((r) => r.id === id);
+      const receta = featuredRecetas.find((r) => r.id === id);
       const esFavorita = favoriteIds.has(id);
       if (esFavorita) {
         const { error } = await supabase
@@ -633,7 +716,7 @@ import { STORAGE_BUCKET, SUPABASE_URL } from "./config.js";
         favoriteIds.add(id);
       }
       if (receta) receta.favorita = favoriteIds.has(id);
-      btn.textContent = favoriteIds.has(id) ? "\u2605" : "\u2606";
+      btn.textContent = favoriteIds.has(id) ? STAR_ON : STAR_OFF;
       btn.classList.toggle("starred", favoriteIds.has(id));
     } catch (err) {
       console.error(err);
@@ -643,16 +726,31 @@ import { STORAGE_BUCKET, SUPABASE_URL } from "./config.js";
     }
   }
 
-  function showLightbox(url, alt) {
-    lightboxImg.src = url;
-    lightboxImg.alt = alt || "Foto de receta";
-    lightbox.classList.remove("hidden");
-  }
+  async function toggleDestacada(id, btn) {
+    try {
+      btn.disabled = true;
+      const receta = featuredRecetas.find((r) => r.id === id);
+      const nextValue = !receta?.destacada;
+      const { error } = await supabase.from("recetas").update({ destacada: nextValue }).eq("id", id);
+      if (error) throw error;
+      if (receta) receta.destacada = nextValue;
 
-  function hideLightbox() {
-    lightbox.classList.add("hidden");
-    lightboxImg.removeAttribute("src");
-    lightboxImg.removeAttribute("alt");
+      if (!nextValue) {
+        featuredRecetas = featuredRecetas.filter((r) => r.id !== id);
+        if (featuredIndex >= featuredRecetas.length) {
+          featuredIndex = Math.max(0, featuredRecetas.length - 1);
+        }
+        renderFeatured();
+        return;
+      }
+
+      setFeaturedButtonState(btn, nextValue);
+    } catch (err) {
+      console.error(err);
+      alert("No se pudo actualizar destacada. Intentalo de nuevo.");
+    } finally {
+      btn.disabled = false;
+    }
   }
 
   function getLocalSession() {
@@ -760,8 +858,8 @@ import { STORAGE_BUCKET, SUPABASE_URL } from "./config.js";
   }
 
   function applyFavoriteFlags() {
-    if (!Array.isArray(recetas)) return;
-    recetas.forEach((r) => {
+    if (!Array.isArray(featuredRecetas)) return;
+    featuredRecetas.forEach((r) => {
       r.favorita = favoriteIds.has(r.id);
     });
   }
@@ -798,24 +896,10 @@ import { STORAGE_BUCKET, SUPABASE_URL } from "./config.js";
     return "Usuario";
   }
 
-  function canEdit(receta) {
-    if (isAdmin) return true;
-    if (!currentSession?.user?.id) return false;
-    const userId = currentSession.user.id;
-    return receta?.user_id === userId;
-  }
-
   function displayAuthor(receta) {
     const p = receta?.profiles;
     if (!p) return "Autor desconocido";
     return p.username || "Autor";
-  }
-
-  function toList(text) {
-    return text
-      .split(/\n+/)
-      .map((line) => line.trim())
-      .filter(Boolean);
   }
 
   function formatFecha(fecha) {
@@ -829,7 +913,60 @@ import { STORAGE_BUCKET, SUPABASE_URL } from "./config.js";
     }).format(date);
   }
 
+  function getSummary(receta) {
+    return receta?.resumen || receta?.descripcion || "Sin descripcion todavia.";
+  }
+
+  function hasRecipeImage(receta) {
+    const value = receta?.foto_url || receta?.foto;
+    if (typeof value === "string") return value.trim().length > 0;
+    return Boolean(value);
+  }
+
+  function truncateText(value, max) {
+    const text = (value || "").toString().trim();
+    if (text.length <= max) return text;
+    return `${text.slice(0, max - 3)}...`;
+  }
+
+  function getWrappedIndex(index, total) {
+    if (!total) return 0;
+    return (index + total) % total;
+  }
+
+  function getRandomSample(list, size) {
+    if (!Array.isArray(list)) return [];
+    const copy = list.slice();
+    for (let i = copy.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy.slice(0, Math.max(0, size));
+  }
+
+  function setFeaturedButtonState(btn, isFeatured) {
+    if (!btn) return;
+    btn.textContent = isFeatured ? "Quitar destacada" : "Destacar";
+    btn.classList.toggle("is-featured", isFeatured);
+    btn.setAttribute("aria-pressed", isFeatured ? "true" : "false");
+  }
+
+  function renderAdminBadge(container) {
+    if (!container) return;
+    clearAdminBadge();
+    if (!isAdmin) return;
+    const badge = document.createElement("span");
+    badge.className = "admin-badge";
+    badge.textContent = "Admin";
+    const host = document.getElementById("user-menu-toggle") || container.parentElement;
+    if (host) {
+      host.appendChild(badge);
+      return;
+    }
+    container.insertAdjacentElement("afterend", badge);
+  }
+
+  function clearAdminBadge() {
+    document.querySelectorAll(".admin-badge").forEach((badge) => badge.remove());
+  }
 })();
-
-
-

@@ -19,10 +19,12 @@ async function init() {
     summaryEl.textContent = "Falta el identificador de la receta.";
     return;
   }
+  console.log("[recipe-view] init", { id });
   await loadReceta(id);
 }
 
 async function loadReceta(id) {
+  console.log("[recipe-view] loadReceta", { id });
   setLoadingState();
   try {
     const { data, error } = await supabase
@@ -46,16 +48,17 @@ async function loadReceta(id) {
       return;
     }
     renderReceta(data);
+    trackView(id);
   } catch (err) {
     console.error(err);
     titleEl.textContent = "No se pudo cargar la receta";
-    summaryEl.textContent = err?.message || "Inténtalo de nuevo.";
+    summaryEl.textContent = err?.message || "Int\u00e9ntalo de nuevo.";
   }
 }
 
 function renderReceta(receta) {
   titleEl.textContent = receta.titulo || "Receta";
-  summaryEl.textContent = receta.resumen || "Sin descripcion";
+  summaryEl.textContent = receta.resumen || "Sin descripci\u00f3n";
   dateEl.textContent = `Publicada el ${formatFecha(receta.fecha)}`;
   renderMeta(receta);
   renderTags(receta);
@@ -113,6 +116,7 @@ function renderImage(receta) {
   }
 }
 
+
 function renderList(target, items, ordered = false) {
   target.innerHTML = "";
   const list = Array.isArray(items) ? items : [];
@@ -154,4 +158,40 @@ function setLoadingState() {
   ingredientsEl.innerHTML = "";
   stepsEl.innerHTML = "";
   tagsEl.innerHTML = "";
+}
+
+async function trackView(recetaId) {
+  try {
+    const { data: userData } = await supabase.auth.getUser();
+    const user = userData?.user || null;
+    if (!user) {
+      if (!markAnonView(recetaId)) return;
+      await supabase.rpc("record_receta_view", { p_receta_id: recetaId });
+      return;
+    }
+    await supabase.rpc("record_receta_view", { p_receta_id: recetaId });
+  } catch (err) {
+    console.warn("No se pudo contar la visita", err);
+  }
+}
+
+function markAnonView(recetaId) {
+  try {
+    const key = `receta-viewed:${recetaId}`;
+    const last = localStorage.getItem(key);
+    if (!shouldCountView(last)) return false;
+    localStorage.setItem(key, new Date().toISOString());
+    return true;
+  } catch (err) {
+    return true;
+  }
+}
+
+function shouldCountView(lastViewAt) {
+  if (!lastViewAt) return true;
+  const last = new Date(lastViewAt);
+  if (Number.isNaN(last.getTime())) return true;
+  const now = Date.now();
+  const diffMs = now - last.getTime();
+  return diffMs >= 24 * 60 * 60 * 1000;
 }

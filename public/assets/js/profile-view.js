@@ -65,7 +65,7 @@ async function loadRecipes(userId) {
       title.textContent = receta.titulo;
       const summary = document.createElement("p");
       summary.className = "muted";
-      summary.textContent = receta.resumen || "Sin descripción";
+      summary.textContent = receta.resumen || "Sin descripci\u00f3n";
       const meta = document.createElement("p");
       meta.className = "muted";
       meta.textContent = formatFecha(receta.fecha);
